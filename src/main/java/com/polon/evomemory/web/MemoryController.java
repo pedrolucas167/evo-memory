@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.polon.evomemory.auth.AuthService;
 import com.polon.evomemory.memory.MemoryService;
 import com.polon.evomemory.memory.SemanticMemory;
 
@@ -27,7 +28,12 @@ public class MemoryController {
     }
 
     @PostMapping("/{userId}/reindex")
-    public ReindexResult reindex(@NotBlank @PathVariable String userId) {
+    public ReindexResult reindex(@NotBlank @PathVariable String userId, HttpServletRequest request) {
+        String tokenUser = (String) request.getAttribute("authUserId");
+        if (tokenUser != null && !tokenUser.equals(userId)) {
+            throw new org.springframework.web.bind.annotation.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "userId não corresponde ao token");
+        }
         return memoryService.reindex(userId);
     }
 
