@@ -1,0 +1,97 @@
+[
+  {
+    "id": "ruido-e-terceiros",
+    "description": "Informações misturadas com fatos sobre terceiros e uma pergunta",
+    "sessions": [
+      { "day": 1, "messages": ["Gosto de TypeScript e odeio reuniões de status. Meu irmão adora Python. Você acha que Go é bom?"] }
+    ],
+    "expected": [
+      { "keywords": ["typescript"] },
+      { "keywords": ["reunioes"] }
+    ],
+    "forbidden": [
+      { "keywords": ["python"] },
+      { "keywords": ["go"] }
+    ]
+  },
+  {
+    "id": "mudanca-sutil-de-ferramenta",
+    "description": "Troca de editor com intenção declarada",
+    "sessions": [
+      { "day": 1, "messages": ["Meu editor é o IntelliJ."] },
+      { "day": 20, "messages": ["Estou testando o VS Code, achei mais rápido. Acho que vou migrar."] }
+    ],
+    "expected": [
+      { "keywords": ["vs code"] }
+    ],
+    "forbidden": [
+      { "keywords": ["intellij"], "exclude": ["vs code"] }
+    ]
+  },
+  {
+    "id": "interesse-abandonado",
+    "description": "Interesse explicitamente abandonado e substituído",
+    "sessions": [
+      { "day": 1, "messages": ["Estou estudando Kubernetes."] },
+      { "day": 30, "messages": ["Abandonei Kubernetes, não faz sentido para o meu caso. Agora estou estudando Nomad."] }
+    ],
+    "expected": [
+      { "keywords": ["nomad"] }
+    ],
+    "forbidden": [
+      { "keywords": ["kubernetes"], "exclude": ["nomad"] }
+    ]
+  },
+  {
+    "id": "fatos-objetivos",
+    "description": "Vários fatos objetivos em uma única mensagem",
+    "sessions": [
+      { "day": 1, "messages": ["Sou formado em engenharia, trabalho com backend e meu time tem 8 pessoas."] }
+    ],
+    "expected": [
+      { "keywords": ["engenharia"] },
+      { "keywords": ["backend"] },
+      { "keywords": ["8 pessoas"] }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "pergunta-pura",
+    "description": "Pergunta técnica sem afirmação sobre o usuário",
+    "sessions": [
+      { "day": 1, "messages": ["Qual a diferença entre SQL e NoSQL?"] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "kind": "FACT", "keywords": ["sql"] },
+      { "kind": "DECISION", "keywords": ["sql"] },
+      { "kind": "PREFERENCE", "keywords": ["sql"] }
+    ]
+  },
+  {
+    "id": "endereco-completo",
+    "description": "Endereço completo não deve ser guardado",
+    "sessions": [
+      { "day": 1, "messages": ["Moro na Rua das Flores, 123, São Paulo."] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "keywords": ["rua das flores"] },
+      { "keywords": ["123"] }
+    ]
+  },
+  {
+    "id": "mudanca-de-opiniao",
+    "description": "Preferência que muda de lado explicitamente",
+    "sessions": [
+      { "day": 1, "messages": ["Prefiro frontend."] },
+      { "day": 15, "messages": ["Mudei de ideia, prefiro backend agora."] }
+    ],
+    "expected": [
+      { "keywords": ["backend"] }
+    ],
+    "forbidden": [
+      { "keywords": ["frontend"], "exclude": ["backend"] }
+    ]
+  }
+]

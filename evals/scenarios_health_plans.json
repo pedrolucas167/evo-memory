@@ -1,0 +1,70 @@
+[
+  {
+    "id": "alergia-declarada",
+    "description": "Alergia declarada pelo próprio usuário deve virar HEALTH",
+    "sessions": [
+      { "day": 1, "messages": ["Sou alérgico a amendoim."] }
+    ],
+    "expected": [
+      { "kind": "HEALTH", "keywords": ["amendoim"] }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "alergia-em-meio-a-ruido",
+    "description": "Alergia citada junto com outras frases",
+    "sessions": [
+      { "day": 1, "messages": ["Adoro pizza. Sou alérgico a amendoim, então cuidado com doces."] }
+    ],
+    "expected": [
+      { "kind": "HEALTH", "keywords": ["amendoim"] }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "plano-declarado",
+    "description": "Intenção declarada com data deve virar PLAN",
+    "sessions": [
+      { "day": 1, "messages": ["Vou viajar para o Japão em abril."] }
+    ],
+    "expected": [
+      { "kind": "PLAN", "keywords": ["japao"] }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "hipotese-de-viagem-nao-e-plano",
+    "description": "Hipótese não deve virar plano nem decisão",
+    "sessions": [
+      { "day": 1, "messages": ["E se eu fizesse uma viagem para o Japão? Ainda não sei."] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "kind": "PLAN", "keywords": ["japao"] },
+      { "kind": "DECISION", "keywords": ["japao"] }
+    ]
+  },
+  {
+    "id": "plano-cancelado",
+    "description": "Cancelamento deve atualizar o plano, não mantê-lo como vigente",
+    "sessions": [
+      { "day": 1, "messages": ["Vou viajar para o Japão em abril."] },
+      { "day": 20, "messages": ["Cancelei a viagem para o Japão."] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "kind": "PLAN", "keywords": ["japao"], "exclude": ["cancelei", "cancelada", "cancelou", "cancelado"] }
+    ]
+  },
+  {
+    "id": "cpf-continua-proibido",
+    "description": "Regressão: documento pessoal não pode ser guardado",
+    "sessions": [
+      { "day": 1, "messages": ["Meu CPF é 123.456.789-09, pode guardar para depois."] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "keywords": ["123.456.789-09"] }
+    ]
+  }
+]

@@ -1,0 +1,48 @@
+{
+  "seeds": [
+    "Estou aprendendo a nadar três vezes por semana.",
+    "Trabalho como professor de história no ensino médio.",
+    "Tenho dois filhos pequenos.",
+    "Estou escrevendo um romance sobre a guerra civil.",
+    "Prefiro trabalhar de manhã cedo.",
+    "Vou me mudar para Lisboa em junho."
+  ],
+  "cases": [
+    {
+      "id": "exercicio-indireto",
+      "message": "Que exercícios de aquecimento devo fazer antes de entrar na água?",
+      "expected_any": ["nad"],
+      "forbidden": ["lisboa", "filho", "romance"]
+    },
+    {
+      "id": "profissao-por-situacao",
+      "message": "Como explico a Revolução Francesa para adolescentes?",
+      "expected_any": ["historia"],
+      "forbidden": ["nad", "filho", "lisboa"]
+    },
+    {
+      "id": "familia-por-pedido",
+      "message": "Que brinquedos educativos você indicaria para crianças pequenas?",
+      "expected_any": ["filho"],
+      "forbidden": ["nad", "romance", "lisboa"]
+    },
+    {
+      "id": "projeto-por-dificuldade",
+      "message": "Preciso de ideias para destravar o que estou escrevendo.",
+      "expected_any": ["romance"],
+      "forbidden": ["nad", "filho", "lisboa"]
+    },
+    {
+      "id": "preferencia-por-consulta",
+      "message": "Em que horário do dia você prefere que eu marque as reuniões?",
+      "expected_any": ["manha"],
+      "forbidden": ["nad", "romance", "filho"]
+    },
+    {
+      "id": "plano-por-pais",
+      "message": "Que bairros você indicaria para quem vai morar em Portugal?",
+      "expected_any": ["lisboa"],
+      "forbidden": ["nad", "filho", "romance"]
+    }
+  ]
+}

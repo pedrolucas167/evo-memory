@@ -1,0 +1,18 @@
+# Build
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Resultados locais de avaliação (contêm dados de teste)
+evals/results/
+
+# Python
+__pycache__/
+*.pyc

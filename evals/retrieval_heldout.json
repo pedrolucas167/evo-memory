@@ -1,0 +1,48 @@
+{
+  "seeds": [
+    "Estou aprendendo a tocar violão há três meses.",
+    "Trabalho como engenheira de dados numa fintech.",
+    "Sou alérgico a amendoim.",
+    "Estou planejando uma viagem para o Japão em abril.",
+    "Meu projeto atual é um sistema de agendamento para clínicas.",
+    "Gosto muito de corrida de longa distância."
+  ],
+  "cases": [
+    {
+      "id": "instrumento-por-significado",
+      "message": "Que acorde devo treinar para tocar uma música nova?",
+      "expected_any": ["violao"],
+      "forbidden": ["amendoim", "japao"]
+    },
+    {
+      "id": "dados-e-pipelines",
+      "message": "Quais riscos de vazamento existem em pipelines de dados?",
+      "expected_any": ["dados"],
+      "forbidden": ["violao", "amendoim"]
+    },
+    {
+      "id": "paráfrase-de-alergia",
+      "message": "Posso comer um lanche com pasta de castanha?",
+      "expected_any": ["amendoim"],
+      "forbidden": ["japao"]
+    },
+    {
+      "id": "cidade-pelo-nome-de-outra-forma",
+      "message": "Que dicas você tem para visitar Tóquio na primavera?",
+      "expected_any": ["japao"],
+      "forbidden": ["amendoim", "violao"]
+    },
+    {
+      "id": "projeto-sem-palavras-em-comum",
+      "message": "Como estruturar a marcação de consultas médicas online?",
+      "expected_any": ["agendamento", "clinica"],
+      "forbidden": ["violao", "corrida"]
+    },
+    {
+      "id": "esporte-por-objetivo",
+      "message": "Vou começar a treinar para uma maratona de 42 km.",
+      "expected_any": ["corrida"],
+      "forbidden": ["violao", "japao"]
+    }
+  ]
+}

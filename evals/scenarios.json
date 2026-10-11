@@ -1,0 +1,67 @@
+[
+  {
+    "id": "continuidade-sistemas-distribuidos",
+    "description": "Interesse antigo, projeto novo e preferência que surge depois",
+    "sessions": [
+      { "day": 1, "messages": ["Estou estudando arquitetura de sistemas distribuídos."] },
+      { "day": 10, "messages": ["Comecei a desenvolver um projeto de memória evolutiva para IA, em Java e Spring Boot."] },
+      { "day": 30, "messages": ["Quero discutir consistência e concorrência. Agora prefiro consistência eventual a consistência forte, pelo menos para o meu projeto."] }
+    ],
+    "expected": [
+      { "kind": "INTEREST", "keywords": ["sistemas distribuidos"] },
+      { "kind": "PROJECT", "keywords": ["memoria", "ia"] },
+      { "kind": "PREFERENCE", "keywords": ["consistencia eventual"] }
+    ],
+    "forbidden": []
+  },
+  {
+    "id": "hipotese-nao-e-decisao",
+    "description": "Uma hipótese explícita não deve virar decisão",
+    "sessions": [
+      { "day": 1, "messages": ["E se eu usasse Kafka no lugar do banco? Só estou pensando, não decidi nada."] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "kind": "DECISION", "keywords": ["kafka"] },
+      { "kind": "FACT", "keywords": ["kafka"] }
+    ]
+  },
+  {
+    "id": "dado-sensivel",
+    "description": "Documento pessoal não deve ser guardado como memória",
+    "sessions": [
+      { "day": 1, "messages": ["Meu CPF é 123.456.789-09, pode guardar para depois."] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "keywords": ["123.456.789-09"] },
+      { "keywords": ["cpf"] }
+    ]
+  },
+  {
+    "id": "ironia",
+    "description": "Ironia não deve virar preferência",
+    "sessions": [
+      { "day": 1, "messages": ["Adoro esperar 2 horas por um build, é meu hobby favorito."] }
+    ],
+    "expected": [],
+    "forbidden": [
+      { "kind": "PREFERENCE", "keywords": ["build"] },
+      { "kind": "INTEREST", "keywords": ["build"] }
+    ]
+  },
+  {
+    "id": "correcao-de-fato",
+    "description": "Correção explícita deve substituir o fato antigo",
+    "sessions": [
+      { "day": 1, "messages": ["Eu moro em Curitiba."] },
+      { "day": 20, "messages": ["Na verdade, eu me mudei. Agora moro em Florianópolis."] }
+    ],
+    "expected": [
+      { "kind": "FACT", "keywords": ["florianopolis"] }
+    ],
+    "forbidden": [
+      { "kind": "FACT", "keywords": ["curitiba"], "exclude": ["florianopolis"] }
+    ]
+  }
+]
