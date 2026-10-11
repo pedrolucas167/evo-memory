@@ -41,11 +41,7 @@ public class MemoryController {
     public ResponseEntity<Map<String, Object>> graph(@PathVariable String userId) {
         List<SemanticMemory> active = memoryService.recallActive(userId);
         return ResponseEntity.ok(Map.of("user", userId, "memories",
-                active.stream().map(m -> Map.of("id", m.getId(), "kind", m.getKind(),
-                        "subject_key", m.getSubjectKey(), "content", m.getContent(),
-                        "wing", m.getWing() != null ? m.getWing() : "general", "version", m.getVersion(),
-                        "conf", m.getConfidence(), "valid_until", m.getValidUntil(),
-                        "last_confirmed", m.getLastConfirmedAt())).toList(),
+                active.stream().map(GraphMapper::map).toList(),
                 "count", active.size()));
     }
 }
