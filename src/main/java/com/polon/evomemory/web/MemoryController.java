@@ -37,7 +37,7 @@ public class MemoryController {
         return ResponseEntity.ok(Map.of("user", userId, "memories",
                 active.stream().map(m -> Map.of("id", m.getId(), "kind", m.getKind(),
                         "subject_key", m.getSubjectKey(), "content", m.getContent(),
-                        "wing", m.getWing(), "version", m.getVersion(),
+                        "wing", m.getWing() != null ? m.getWing() : "general", "version", m.getVersion(),
                         "conf", m.getConfidence(), "valid_until", m.getValidUntil(),
                         "last_confirmed", m.getLastConfirmedAt())).toList(),
                 "count", active.size()));
