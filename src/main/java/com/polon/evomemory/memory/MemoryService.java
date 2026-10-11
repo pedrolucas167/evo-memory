@@ -57,7 +57,7 @@ public class MemoryService {
 
         if (existing.isEmpty()) {
             SemanticMemory created = new SemanticMemory(UUID.randomUUID(), userId, candidate.kind(),
-                    candidate.subjectKey(), candidate.content(), candidate.confidence(), episode.getId(), now);
+                    candidate.subjectKey(), candidate.content(), candidate.confidence(), episode.getId(), now, "general");
             created.setValidUntil(candidate.validUntil());
             memories.save(created);
             recordRevision(created, ChangeType.CREATED, null, null, episode.getId(),

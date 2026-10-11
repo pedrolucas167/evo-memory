@@ -56,6 +56,9 @@ public class SemanticMemory {
     @Column(name = "source_episode_id")
     private UUID sourceEpisodeId;
 
+    @Column(name = "wing", nullable = false)
+    private String wing;
+
     @Column(name = "valid_until")
     private LocalDate validUntil;
 
@@ -64,6 +67,11 @@ public class SemanticMemory {
 
     public SemanticMemory(UUID id, String userId, MemoryKind kind, String subjectKey, String content,
                           double confidence, UUID sourceEpisodeId, Instant now) {
+        this(id, userId, kind, subjectKey, content, confidence, sourceEpisodeId, now, "general");
+    }
+
+    public SemanticMemory(UUID id, String userId, MemoryKind kind, String subjectKey, String content,
+                          double confidence, UUID sourceEpisodeId, Instant now, String wing) {
         this.id = id;
         this.userId = userId;
         this.kind = kind;
@@ -77,6 +85,7 @@ public class SemanticMemory {
         this.lastConfirmedAt = now;
         this.updatedAt = now;
         this.sourceEpisodeId = sourceEpisodeId;
+        this.wing = wing != null ? wing : "general";
     }
 
     void confirm(Instant now) {
@@ -170,5 +179,13 @@ public class SemanticMemory {
 
     public void setValidUntil(LocalDate validUntil) {
         this.validUntil = validUntil;
+    }
+
+    public String getWing() {
+        return wing;
+    }
+
+    public void setWing(String wing) {
+        this.wing = wing != null ? wing : "general";
     }
 }
