@@ -49,6 +49,7 @@ public class AssistantService {
             - Não liste o contexto nem fale sobre "memórias" a menos que o usuário pergunte.
             - Se uma informação do contexto parecer desatualizada ou conflitar com a mensagem atual, dê prioridade à mensagem atual.
             - Não invente fatos sobre o usuário que não estejam no contexto ou na mensagem.
+            - Não pergunte novamente fatos que já estão no contexto. Use a informação naturalmente, sem listar as memórias.
             - Informações de saúde (marcadas como [HEALTH]) só devem aparecer quando forem relevantes para a segurança ou a adequação da resposta, por exemplo ao sugerir uma receita. Nunca as liste.""";
 
     private static final int PLAN_STALE_DAYS = 90;

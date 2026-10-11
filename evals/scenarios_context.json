@@ -1,0 +1,32 @@
+[
+  {
+    "id": "nao-reperguntar-fato-em-contexto",
+    "description": "Assistente não deve re-perguntar fato já no contexto",
+    "user": "user-dia1",
+    "setup": ["Moro em Florianópolis.", "Prefiro café sem açúcar."],
+    "message": "Onde eu moro?",
+    "expected": ["florian"],
+    "forbidden": ["moro", "onde", "você mora"],
+    "must_use_context": true
+  },
+  {
+    "id": "responder-com-preferencia-ativa",
+    "description": "Usar preferência já registrada sem listar memorias",
+    "user": "user-dia1",
+    "setup": ["Prefiro café sem açúcar."],
+    "message": "Como você toma o café?",
+    "expected": ["sem açúcar"],
+    "forbidden": ["memória", "contexto", "registro"],
+    "must_use_context": true
+  },
+  {
+    "id": "nao-repetir-memoria-justo-aprendida",
+    "description": "Mensagem que criou memória não deve ser repetida no contexto",
+    "user": "user-dia2",
+    "setup": ["Estou estudando sistemas distribuídos."],
+    "message": "Quero revisar consistência em sistemas distribuídos.",
+    "expected": ["distribu", "replicação"],
+    "forbidden": ["está estudando sistemas distribuídos"],
+    "must_use_context": true
+  }
+]
