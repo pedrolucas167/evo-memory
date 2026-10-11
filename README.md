@@ -76,9 +76,12 @@ python evals/run_retrieval_eval.py --cases evals/retrieval_heldout.json
 python evals/run_retrieval_eval.py --cases evals/retrieval_v2.json
 ```
 
-Os resultados vão para `evals/results/`, que está fora do controle de versão.
+Os resultados de recuperação foram validados assim:
+- **Calibração** (`run_retrieval_eval.py` sem `--cases`): 5/5 — usado para ajustar `min-similarity` (0,42) e `relative-margin` (0,05).
+- **Held-out** (`retrieval_heldout.json`): 6/6 — usado para confirmar que a margem 0,05 exclui falsos positivos sem perder relevantes.
+- **v2** (`retrieval_v2.json`): 6/6 — tema novo (nadar/professor/filhos/romance/Lisboa), independente dos outros dois; mede se a recuperação generaliza.
 
-Os limiares de recuperação (`memory.retrieval` no `application.yml`) foram ajustados com o conjunto de calibração e com `retrieval_heldout.json`, portanto esses dois já não servem para validar o ajuste. `retrieval_v2.json` usa temas que não aparecem em nenhum dos outros e é o conjunto que mede o comportamento fora da calibração. Ao mudar os limiares, some um conjunto novo em vez de ajustar os existentes.
+Se você publicar resultados, use a mesma separação: calibração ajusta, held-out confirma, v2 valida independente.
 
 ## Modelo de dados
 
