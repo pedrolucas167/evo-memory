@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: evomemory
       POSTGRES_USER: evomemory
-      POSTGRES_PASSWORD: evomemory
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-evomemory}
     ports:
       - "5433:5432"
     volumes:

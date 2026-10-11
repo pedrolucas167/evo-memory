@@ -3,8 +3,8 @@ spring:
     name: evo-memory
   datasource:
     url: jdbc:postgresql://localhost:5433/evomemory
-    username: evomemory
-    password: evomemory
+    username: ${DB_USER:evomemory}
+    password: ${DB_PASSWORD:evomemory}
   jpa:
     open-in-view: false
     hibernate:
