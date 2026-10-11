@@ -91,7 +91,13 @@ public class AssistantService {
                 .filter(memory -> !isStalePlan(memory, today))
                 .toList();
 
-        List<SemanticMemory> context = select(userId, message, active);
+        // Se o usuário pediu com wing explícito, restringe; senão usa "general" como padrão.
+        String wingFilter = message.contains("wing:") ? extractWing(message) : null;
+        List<SemanticMemory> eligible = active.stream()
+                .filter(memory -> wingFilter == null || memory.getWing().equals(wingFilter))
+                .toList();
+
+        List<SemanticMemory> context = select(userId, message, eligible);
         String answer = llmClient.complete(new LlmRequest(
                 properties.getChatModel(), SYSTEM_PROMPT, buildUserPrompt(message, context), 0.7));
 
@@ -151,6 +157,14 @@ public class AssistantService {
         }
         LocalDate lastConfirmed = memory.getLastConfirmedAt().atZone(ZoneOffset.UTC).toLocalDate();
         return lastConfirmed.isBefore(today.minusDays(PLAN_STALE_DAYS));
+    }
+
+    private static String extractWing(String message) {
+        int idx = message.indexOf("wing:");
+        if (idx < 0) return null;
+        String rest = message.substring(idx + 5).trim();
+        int space = rest.indexOf(' ');
+        return space > 0 ? rest.substring(0, space) : rest;
     }
 
     private static String buildUserPrompt(String message, List<SemanticMemory> context) {
