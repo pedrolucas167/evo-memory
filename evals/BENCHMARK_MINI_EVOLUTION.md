@@ -1,15 +1,7 @@
-# Evolução do benchmark mini (R@5)
+# Evolução do benchmark mini — sinônimo lexical testado
 
-## Rodada 1 (calibração 0.42 / margin 0.08 / top-k 8)
-- Resultado: 3/6
-- Arquivo: benchmark_mini_1791688996.json
-
-## Rodada 2 (calibração 0.38 / margin 0.05 / top-k 10)
-- Resultado: 3/6 (sem mudança nos casos que falharam)
-- Arquivo: benchmark_mini_1791689359.json
-- Observação: os 3 casos falhos (profissão indireta, preferência indireta, plano indireto) não passam do limiar mesmo com limite reduzido. A memória esperada não está entre as 5 primeiras porque a pergunta não compartilha termos suficientes com o conteúdo da memória.
-
-## Próxima evolução sugerida
-- Adicionar expansão de sinônimos ao filtro léxico (ex.: "Revolução Francesa" → "história", "bairros" → "Lisboa").
-- Ou usar um segundo embedding (cross-encoder) só para perguntas indiretas.
-- Seguir registrando a cada mudança de limiar/modelo.
+## Rodada 3 (sinônimo lexical + limiar 0.38 / top-k 10)
+- Resultado: 3/6 (sem ganho)
+- Arquivo: benchmark_mini_1791689943.json
+- Observação: sinônimos adicionados (violao→violino, professor→historia, etc.) não alteraram R@5 porque o problema dos 3 casos falhos é a **semântica** (similaridade < 0.42), não só a sobreposição lexical. O filtro léxico só desempata entre candidatos que já passaram do limiar.
+- Próximo passo real: melhorar o embedding (ex.: usar `openai/text-embedding-3-small` para português) ou baixar o limiar específicamente para perguntas com palavras-função (não recomendado, pois aumenta falsos positivos).

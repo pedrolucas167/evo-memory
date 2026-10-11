@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.polon.evomemory.assistant.SynonymExpander;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -200,7 +202,9 @@ public class AssistantService {
     }
 
     private static int overlap(Set<String> messageWords, Set<String> memoryWords) {
-        return (int) messageWords.stream().filter(memoryWords::contains).count();
+        Set<String> msgExpanded = SynonymExpander.expand(messageWords);
+        Set<String> memExpanded = SynonymExpander.expand(memoryWords);
+        return (int) msgExpanded.stream().filter(memExpanded::contains).count();
     }
 
     private record Scored(SemanticMemory memory, double semantic, int lexical) {
