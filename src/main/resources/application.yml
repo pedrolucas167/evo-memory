@@ -21,6 +21,6 @@ memory:
     chat-model: openai/gpt-6-luna
     embedding-model: baai/bge-m3
   retrieval:
-    min-similarity: 0.42
+    min-similarity: 0.38
     relative-margin: 0.05
-    top-k: 8
+    top-k: 10
