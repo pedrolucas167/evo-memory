@@ -1,5 +1,16 @@
 .env
 .local/
+# Notas internas de desenvolvimento (documentacao publica no README)
+/ARCHITECTURE.md
+/PROFILES.md
+/ROADMAP.md
+/SECURITY_REVIEW.md
+/SECRET.md
+/secret.md
+/benchmarks/README.md
+/evals/BENCHMARKS.md
+/evals/BENCHMARK_MINI_EVOLUTION.md
+/evals/RESEARCH_PROTOCOL.md
 .env.*
 !.env.example
 !.env.template
