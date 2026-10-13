@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({AssistantController.class, ChatController.class, MemoryController.class})
+@WebMvcTest({AssistantController.class, ChatController.class, MemoryController.class, ExperimentController.class})
 class ApiAuthorizationTest {
     @Autowired private MockMvc mvc;
     @MockBean private AuthService auth;
@@ -42,7 +42,8 @@ class ApiAuthorizationTest {
                 request(HttpMethod.GET, "/api/memories/owner/graph"),
                 request(HttpMethod.PATCH, "/api/memories/owner/" + memoryId),
                 request(HttpMethod.DELETE, "/api/memories/owner/" + memoryId),
-                request(HttpMethod.GET, "/api/memories/owner/" + memoryId + "/history"));
+                request(HttpMethod.GET, "/api/memories/owner/" + memoryId + "/history"),
+                request(HttpMethod.GET, "/api/experiments/owner/configuration"));
     }
 
     @Test
