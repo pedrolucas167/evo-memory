@@ -11,3 +11,7 @@ logging:
     com.polon.evomemory: INFO
     org.springframework.web: WARN
     org.hibernate: WARN
+
+memory:
+  auth:
+    mode: jwks

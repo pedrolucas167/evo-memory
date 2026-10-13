@@ -20,7 +20,7 @@ infraestrutura e verificada por um teste de arquitetura.
 - `infrastructure/persistence`: entidades JPA, repositories, PgMemoryAdapter e
   PgMemoryVectorAdapter. O adapter converte entidades persistidas em dominio.
 - `infrastructure/llm`: HTTP OpenRouter, clientes, adapter de chat e juizes.
-- `infrastructure/auth`: implementacao do contrato de autenticacao.
+- `infrastructure/auth`: JWT institucional RS256/JWKS e JWT local HS256.
 - `infrastructure/web`: controllers, DTOs de entrada, autenticacao/autorizacao,
   limites HTTP e mapeamento de erros.
 - `config`: composicao e configuracoes operacionais.
@@ -67,8 +67,10 @@ campos answer, learned e context.
 
 ## Operacao
 
-A autenticacao e os limites operacionais sao tratados na proxima mudanca de
-seguranca. Esta etapa mantem a interface existente durante a reorganizacao.
+Dev: bind loopback, chave local fora do Git, tokens de teste de curta duracao.
+Prod: provedor externo configurado explicitamente; nao aceita o provider local.
+A autorizacao compara o subject verificado ao usuario de todas as rotas da API.
+Limites de corpo, mensagens, taxa e concorrencia sao controles locais por processo.
 
 ## Pesquisa
 

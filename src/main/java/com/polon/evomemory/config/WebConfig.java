@@ -6,6 +6,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
+@org.springframework.context.annotation.Import(com.polon.evomemory.infrastructure.web.ApiRateLimit.class)
 public class WebConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
