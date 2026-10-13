@@ -19,3 +19,8 @@ logging:
 
 server:
   address: 127.0.0.1
+
+memory:
+  auth:
+    mode: local
+    local-key-file: ${AUTH_LOCAL_KEY_FILE:.local/auth-secret}
