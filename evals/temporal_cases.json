@@ -1,0 +1,25 @@
+{
+  "description": "Synthetic smoke cases for contradictory facts, explicit correction and logical forgetting; not a publication benchmark.",
+  "cases": [
+    {
+      "id": "current-city",
+      "initial": "Moro em Curitiba.",
+      "update": "Mudei de cidade: agora moro em Florianopolis, nao em Curitiba.",
+      "question": "Qual e minha cidade atual?",
+      "expected": "florianopolis",
+      "obsolete": "curitiba",
+      "correction": "Mora em Recife.",
+      "corrected_expected": "recife"
+    },
+    {
+      "id": "coffee-preference",
+      "initial": "Prefiro cafe sem acucar.",
+      "update": "Minha preferencia mudou: agora prefiro cafe com acucar, em vez de sem acucar.",
+      "question": "Como eu prefiro meu cafe atualmente?",
+      "expected": "com acucar",
+      "obsolete": "sem acucar",
+      "correction": "Prefere cafe com leite.",
+      "corrected_expected": "com leite"
+    }
+  ]
+}

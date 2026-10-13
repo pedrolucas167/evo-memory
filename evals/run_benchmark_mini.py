@@ -2,16 +2,15 @@
 """Mini-benchmark: R@5 com retrieval_v2 (6 casos). Nacional, não replicação LongMemEval."""
 import json, time, urllib.request, sys
 from pathlib import Path
+from benchmark_client import post as authenticated_post
+from uuid import uuid4
 
 HERE = Path(__file__).parent
 DATA = HERE / "retrieval_v2.json"
 base = "http://localhost:8080"
 
 def post(path, body):
-    data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(base + path, data=data, headers={"Content-Type":"application/json; charset=utf-8"})
-    with urllib.request.urlopen(req, timeout=180) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    return authenticated_post(base, path, body)
 
 with open(DATA, encoding="utf-8") as f:
     dataset = json.load(f)
@@ -19,7 +18,7 @@ with open(DATA, encoding="utf-8") as f:
 results = []
 passed = 0
 for case in dataset["cases"]:
-    user = f"bench-{time.time():.0f}-{case['id']}"
+    user = f"bench-{uuid4().hex[:16]}"
     for msg in dataset["seeds"]:
         post(f"/api/conversations/{user}", {"conversationId":"s","messages":[msg]})
     reply = post(f"/api/assistant/{user}", {"conversationId":"c","message":case["message"]})

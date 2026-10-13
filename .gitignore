@@ -1,4 +1,29 @@
 .env
+.local/
+.env.*
+!.env.example
+!.env.template
+
+# Credenciais e configuracao privada local
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+src/main/resources/application-local.yml
+src/main/resources/application-local.yaml
+src/main/resources/application-local.properties
+evals/identities.local.json
+
+# Logs, dumps e backups locais
+*.log
+*.hprof
+*.dump
+*.sql.gz
+/logs/
+/dumps/
+/backups/
 # Build
 target/
 
@@ -13,6 +38,7 @@ Thumbs.db
 
 # Resultados locais de avaliação (contêm dados de teste)
 evals/results/
+benchmarks/results/
 
 # Python
 __pycache__/

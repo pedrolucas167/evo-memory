@@ -17,6 +17,8 @@ import time
 import unicodedata
 import urllib.error
 import urllib.request
+import uuid
+from benchmark_client import post as authenticated_post
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -74,21 +76,7 @@ def normalize(text):
 
 
 def post(base, path, body, attempts=3):
-    data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    for attempt in range(attempts):
-        request = urllib.request.Request(
-            base + path,
-            data=data,
-            headers={"Content-Type": "application/json; charset=utf-8"},
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=180) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except urllib.error.HTTPError as error:
-            # Um 500 transitório (ex.: falha de rede) não deve derrubar a rodada inteira.
-            if error.code < 500 or attempt == attempts - 1:
-                raise
-            time.sleep(5)
+    return authenticated_post(base, path, body, attempts)
 
 
 def contains_any(texts, terms):
@@ -114,11 +102,11 @@ def main():
 
     # Cada caso usa um usuário novo: o assistente aprende com as perguntas,
     # então perguntas anteriores não podem contaminar o contexto dos casos seguintes.
-    stamp = int(time.time())
+    stamp = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
     results = []
     for case in cases_list:
         slug = re.sub(r"[^a-z0-9]+", "-", normalize(case["id"])).strip("-")
-        user = f"eval-ret-{stamp}-{slug}"
+        user = f"eval-ret-{stamp}-{slug[:40]}"
         for i, message in enumerate(seeds):
             post(args.base, f"/api/conversations/{user}",
                  {"conversationId": f"seed-{i}", "messages": [message]})

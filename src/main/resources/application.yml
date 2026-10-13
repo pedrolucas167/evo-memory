@@ -1,10 +1,8 @@
 spring:
   application:
     name: evo-memory
-  datasource:
-    url: jdbc:postgresql://localhost:5433/evomemory
-    username: ${DB_USER:evomemory}
-    password: ${DB_PASSWORD:evomemory}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   jpa:
     open-in-view: false
     hibernate:
@@ -13,14 +11,22 @@ spring:
     enabled: true
 
 memory:
+  api:
+    max-concurrent: ${API_MAX_CONCURRENT:4}
+    requests-per-minute: ${API_REQUESTS_PER_MINUTE:120}
+    max-body-bytes: ${API_MAX_BODY_BYTES:65536}
+  auth:
+    jwks-uri: ${AUTH_JWKS_URI:}
+    issuer: ${AUTH_ISSUER:}
+    audience: ${AUTH_AUDIENCE:}
   llm:
     base-url: https://openrouter.ai/api/v1
     api-key: ${OPENROUTER_API_KEY:}
-    extraction-model: openai/gpt-6-luna
-    judge-model: openai/gpt-6-luna
-    chat-model: openai/gpt-6-luna
-    embedding-model: baai/bge-m3
+    extraction-model: ${EXTRACTION_MODEL:openai/gpt-6-luna}
+    judge-model: ${JUDGE_MODEL:openai/gpt-6-luna}
+    chat-model: ${CHAT_MODEL:openai/gpt-6-luna}
+    embedding-model: ${EMBEDDING_MODEL:baai/bge-m3}
   retrieval:
-    min-similarity: 0.38
-    relative-margin: 0.05
-    top-k: 10
+    min-similarity: ${RETRIEVAL_MIN_SIMILARITY:0.38}
+    relative-margin: ${RETRIEVAL_RELATIVE_MARGIN:0.05}
+    top-k: ${RETRIEVAL_TOP_K:10}
