@@ -1,0 +1,62 @@
+{
+  "description": "Preregistered ablation dataset: contradictory personal facts across neutral filler turns. Same raw story to both arms; markers are accentless noun fragments safe to plural/singular forms.",
+  "fillers_before": [
+    "Hoje o dia foi corrido.",
+    "Almoco foi rapido, arroz e feijao.",
+    "Vou dormir cedo hoje."
+  ],
+  "fillers_after": [
+    "Amanha termina o prazo de um projeto.",
+    "Peguei transito na volta pra casa."
+  ],
+  "cases": [
+    {
+      "id": "cidade-atual",
+      "initial": "Moro em Curitiba.",
+      "update": "Mudei de cidade: agora moro em Florianopolis, nao em Curitiba.",
+      "question": "Qual e minha cidade atual?",
+      "expected": "florianopolis",
+      "obsolete": "curitiba"
+    },
+    {
+      "id": "cafe-preferido",
+      "initial": "Prefiro cafe sem acucar.",
+      "update": "Minha preferencia mudou: agora prefiro cafe com acucar, em vez de sem acucar.",
+      "question": "Como eu prefiro meu cafe hoje?",
+      "expected": "com acucar",
+      "obsolete": "sem acucar"
+    },
+    {
+      "id": "futebol-dia",
+      "initial": "Jogo futebol aos sabados.",
+      "update": "Mudei meu jogo: agora jogo aos domingos, nao mais aos sabados.",
+      "question": "Em que dia eu jogo futebol atualmente?",
+      "expected": "domingo",
+      "obsolete": "sabado"
+    },
+    {
+      "id": "gato-nome",
+      "initial": "Tenho uma gata chamada Mel.",
+      "update": "Mel morreu ha duas semanas; adotei um gato chamado Tobi.",
+      "question": "Qual e o nome do meu gato?",
+      "expected": "tobi",
+      "obsolete": "mel"
+    },
+    {
+      "id": "cargo-trabalho",
+      "initial": "Trabalho como analista de dados.",
+      "update": "Fui promovida: agora sou engenheira de dados, e nao mais analista.",
+      "question": "Qual e meu cargo atual?",
+      "expected": "engenheira de dados",
+      "obsolete": "analista"
+    },
+    {
+      "id": "instrumento-musical",
+      "initial": "Toco violao ha um ano.",
+      "update": "Deixei o violao de lado: comecei a tocar piano ha um mes.",
+      "question": "Qual instrumento eu toco hoje?",
+      "expected": "piano",
+      "obsolete": "violao"
+    }
+  ]
+}
