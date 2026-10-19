@@ -74,6 +74,16 @@ qualidade de memória. Os benchmarks HTTP (recuperação R@5, temporal e
 baseline) seguem exigindo o servidor em execução e chave do OpenRouter e não
 foram rerotulados nesta rodada offline.
 
+Experimento A/B offline da regra (`AttentionAbExperimentTest`, sintético e
+determinístico): dez confirmações de 0,5 para o mesmo fato, em dois padrões de
+evidência. Com evidência coerente (leitura de atenção 0,9) a confiança final
+sob a regra condicionada é 0,9392; com confirmações tangenciais (leitura 0,12)
+é 0,8476. A regra legada de taxa fixa produz exatamente 0,8257 nos dois
+padrões: não discrimina. A leitura separa corroboração real (até duas vezes a
+taxa legada) e mantém o ruído perto da taxa conservadora, mas isso é verificação
+da regra de domínio em sintético: não mede comportamento com extração e juiz
+reais, nem substitui os benchmarks HTTP.
+
 ## Resultados preliminares
 
 Rodada local de **13 de outubro de 2026**, com dados sintéticos:
@@ -99,7 +109,7 @@ não mostrou vantagem sobre o histórico completo. Não há demonstração de ga
 de processamento, consistência em históricos longos ou superioridade
 estatística. LongMemEval e LoCoMo ainda não foram replicados.
 
-Como verificação de engenharia, a implementação passou em **78 testes locais**
+Como verificação de engenharia, a implementação passou em **79 testes locais**
 na compilação limpa (incluindo a verificação de consistência das três vistas
 e um benchmark offline determinístico do mecanismo de atenção OLS). Esse
 número não mede a qualidade da memória.
@@ -218,7 +228,7 @@ O projeto usa GitHub Actions para CI/CD. O workflow em `.github/workflows/ci.yml
 declara permissão mínima (`contents: read`, `security-events: write`) e executa
 dois jobs:
 
-- **build-and-test**: compila, roda os 78 testes unitários (incluindo o
+- **build-and-test**: compila, roda os 79 testes unitários (incluindo o
   benchmark offline do mecanismo de atenção OLS) e, sobre o classpath testado,
   consulta a base pública da OSV (`python evals/audit_dependencies.py`).
   A auditoria cobre dependências do build, não certifica ausência de
