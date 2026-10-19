@@ -44,6 +44,7 @@ class OpenRouterLlmClientTest {
         server.start();
         try {
             LlmProperties properties = new LlmProperties();
+            properties.setRetryBackoffMillis(0);
             properties.setBaseUrl("http://localhost:" + server.getAddress().getPort());
             properties.setApiKey("test-key");
             OpenRouterLlmClient client = new OpenRouterLlmClient(properties, new OpenRouterHttp(properties, mapper));
@@ -71,6 +72,7 @@ class OpenRouterLlmClientTest {
         server.start();
         try {
             LlmProperties properties = new LlmProperties();
+            properties.setRetryBackoffMillis(0);
             properties.setBaseUrl("http://localhost:" + server.getAddress().getPort());
             properties.setApiKey("bad-key");
             OpenRouterLlmClient client = new OpenRouterLlmClient(properties, new OpenRouterHttp(properties, mapper));
@@ -96,6 +98,7 @@ class OpenRouterLlmClientTest {
         server.start();
         try {
             LlmProperties properties = new LlmProperties();
+            properties.setRetryBackoffMillis(0);
             properties.setBaseUrl("http://localhost:" + server.getAddress().getPort());
             properties.setApiKey("key");
             OpenRouterLlmClient client = new OpenRouterLlmClient(properties, new OpenRouterHttp(properties, mapper));
@@ -126,6 +129,7 @@ class OpenRouterLlmClientTest {
         server.start();
         try {
             LlmProperties properties = new LlmProperties();
+            properties.setRetryBackoffMillis(0);
             properties.setBaseUrl("http://localhost:" + server.getAddress().getPort());
             properties.setApiKey("key");
             OpenRouterLlmClient client = new OpenRouterLlmClient(properties, new OpenRouterHttp(properties, mapper));
@@ -152,6 +156,7 @@ class OpenRouterLlmClientTest {
         server.start();
         try {
             LlmProperties properties = new LlmProperties();
+            properties.setRetryBackoffMillis(0);
             properties.setBaseUrl("http://localhost:" + server.getAddress().getPort());
             properties.setApiKey("bad");
             OpenRouterLlmClient client = new OpenRouterLlmClient(properties, new OpenRouterHttp(properties, mapper));
@@ -168,6 +173,7 @@ class OpenRouterLlmClientTest {
     @Test
     void wrapsIoFailure() {
         LlmProperties properties = new LlmProperties();
+        properties.setRetryBackoffMillis(0);
         properties.setBaseUrl("http://localhost:1");
         properties.setApiKey("key");
         OpenRouterLlmClient client = new OpenRouterLlmClient(properties, new OpenRouterHttp(properties, mapper));

@@ -214,13 +214,24 @@ PostgreSQL com pgvector armazena `episode`, `semantic_memory` e
 
 ## CI/CD
 
-O projeto usa GitHub Actions para CI/CD. O workflow em `.github/workflows/ci.yml` executa:
+O projeto usa GitHub Actions para CI/CD. O workflow em `.github/workflows/ci.yml`
+declara permissão mínima (`contents: read`, `security-events: write`) e executa
+dois jobs:
 
-- **Build e testes Maven**: Compilação e execução dos 78 testes unitários
-- **Auditoria de dependências**: Verificação de vulnerabilidades via OSV
-- **Scan de segurança**: Análise de vulnerabilidades com Trivy
+- **build-and-test**: compila, roda os 78 testes unitários (incluindo o
+  benchmark offline do mecanismo de atenção OLS) e, sobre o classpath testado,
+  consulta a base pública da OSV (`python evals/audit_dependencies.py`).
+  A auditoria cobre dependências do build, não certifica ausência de
+  vulnerabilidades nem analisa alcance.
+- **security-scan**: análise de sistema de arquivos com Trivy
+  (versão fixada em `0.28.0`), severidade HIGH/CRITICAL e `ignore-unfixed`
+  ativado. O relatório SARIF vai para o GitHub Security; por política do
+  projeto (`exit-code: '0'`), avisos conhecidos com correção pendente no
+  upstream (ex.: spring-webmvc) não derrubam o pipeline.
 
-O pipeline é acionado em push para branches `main` e `develop`, e em pull requests.
+O pipeline é acionado em push para branches `main` e `develop`, e em pull
+requests. Não há segredos no repositório nem no workflow: os jobs de CI não
+acessam provedores de modelo.
 
 ## Limites operacionais e privacidade
 

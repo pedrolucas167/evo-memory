@@ -11,6 +11,7 @@ public class LlmProperties {
     private String judgeModel;
     private String chatModel;
     private String embeddingModel;
+    private long retryBackoffMillis = 2000;
 
     public String getBaseUrl() {
         return baseUrl;
@@ -58,5 +59,13 @@ public class LlmProperties {
 
     public void setEmbeddingModel(String embeddingModel) {
         this.embeddingModel = embeddingModel;
+    }
+
+    public long getRetryBackoffMillis() {
+        return retryBackoffMillis;
+    }
+
+    public void setRetryBackoffMillis(long retryBackoffMillis) {
+        this.retryBackoffMillis = retryBackoffMillis;
     }
 }
