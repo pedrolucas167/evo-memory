@@ -7,8 +7,28 @@ ou se contradiz ao longo das conversas.
 O sistema registra experiências como **memória episódica**, extrai delas um
 estado de **memória semântica** e preserva as revisões desse estado. A hipótese
 de pesquisa é que atualizações explícitas e versionamento possam reduzir o uso
-de informações obsoletas sob um orçamento de contexto controlado. Essa hipótese
-ainda não foi demonstrada pelos experimentos atuais.
+de informações obsoletas sob um orçamento de contexto controlado. Esse teste
+está **pré-registrado** antes da execução — ver [Programa de pesquisa](#programa-de-pesquisa).
+
+## Programa de pesquisa
+
+O projeto segue um protocolo experimental formal (`docs/research/`):
+
+- [`protocolo.md`](docs/research/protocolo.md) — carta do programa: medir ≥
+  decidir, pré-registro antes da primeira observação, replicação mínima,
+  report completo de efeito, dado versionado.
+- [`setup-ambiente.md`](docs/research/setup-ambiente.md) — ficha da montagem
+  (plataforma, banco, modelos em uso, rate limit) e histórico de mudanças que
+  invalidam comparações entre rodadas.
+- [`prereg/`](docs/research/prereg/) — registros pré-execução; o commit do
+  registro precede o primeiro run, auditável pelo histórico do git.
+- [`registro/`](docs/research/registro/) — dossiês pós-execução com protocolo
+  executado, tabelas brutas e limitações.
+
+Experimento em andamento: **ablação da hipótese central**
+(`run_obsolescence_benchmark.py`) — estado versionado do evo-memory vs.
+baseline de histórico completo, histórias idênticas nos dois braços,
+critérios de decisão congelados no pré-registro.
 
 ## Funcionamento
 
