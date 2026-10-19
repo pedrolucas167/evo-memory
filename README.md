@@ -44,6 +44,24 @@ Experimentos executados:
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
 
+Ideias candidatas (aguardando pré-registro próprio):
+
+- **Trajetória de usuário em 10 anos (memória episódica de excelência)** —
+  ideia do proprietário do projeto. Uma IA que acompanha a vida do usuário
+  de forma precisa por uma década: por exemplo, um usuário que começa a usar
+  a IA aos 17 anos e, 10 anos depois, pergunta sobre um evento específico —
+  e a IA recupera o episódio com precisão. Isso é a fronteira natural da
+  pesquisa atual ("como a IA faz parte da história do usuário e recupera
+  informação quando questionada"): o benchmark temporal de hoje semeia tudo
+  no mesmo segundo (sinal temporal neutro, registrado nos dossiês), e esta
+  ideia pede a coordenada que falta — **tempo real sintético** (carimbos de
+  10 anos, eventos datados, mudanças de fase de vida). Desafios técnicos
+  mapeáveis antes do primeiro experimento: semeadura com carimbos de época,
+  consultas aninhadas ao tempo ("o que aconteceu no inverno do segundo ano
+  de trabalho?") e consolidação de episódios antigos sem perda. Na
+  hora certa, o desafio de custo (consultas de carreira inteira) entra como
+  métrica de protocolo igual às demais.
+
 ## Funcionamento
 
 1. Uma conversa gera um episódio com um resumo das mensagens.
