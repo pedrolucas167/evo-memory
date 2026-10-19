@@ -32,3 +32,5 @@ memory:
     top-k: ${RETRIEVAL_TOP_K:10}
     attention-rerank-weight: ${RETRIEVAL_ATTENTION_WEIGHT:0.0}
     attention-rerank-ridge: ${RETRIEVAL_ATTENTION_RIDGE:0.1}
+    judge-rerank: ${RETRIEVAL_JUDGE_RERANK:true}
+    judge-rerank-max-candidates: ${RETRIEVAL_JUDGE_MAX_CANDIDATES:16}
