@@ -7,6 +7,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -63,11 +65,13 @@ public class AssistantService {
     private final EmbeddingPort embeddingClient;
     private final VectorStorePort vectorStore;
     private final RetrievalProperties retrieval;
+    private final JudgeReranker judgeReranker;
     private final Clock clock;
 
     public AssistantService(MemoryRecallPort memoryService, ConversationPort conversationService,
                             LlmPort llmPort, LlmProperties properties, EmbeddingPort embeddingClient,
-                            VectorStorePort vectorStore, RetrievalProperties retrieval, Clock clock) {
+                            VectorStorePort vectorStore, RetrievalProperties retrieval,
+                            JudgeReranker judgeReranker, Clock clock) {
         this.memoryService = memoryService;
         this.conversationService = conversationService;
         this.llmPort = llmPort;
@@ -75,6 +79,7 @@ public class AssistantService {
         this.embeddingClient = embeddingClient;
         this.vectorStore = vectorStore;
         this.retrieval = retrieval;
+        this.judgeReranker = judgeReranker;
         this.clock = clock;
     }
 
@@ -115,20 +120,51 @@ public class AssistantService {
         Map<UUID, Double> semantic = semanticMatches(userId, message, eligible);
         Set<String> messageWords = words(message);
 
-        List<Memory> relevant = active.stream()
+        List<Scored> ranked = active.stream()
                 .map(memory -> new Scored(memory,
                         semantic.getOrDefault(memory.getId(), 0.0),
                         overlap(messageWords, words(memory.getContent() + " " + memory.getSubjectKey()))))
                 .filter(scored -> scored.semantic() > 0 || scored.lexical() > 0)
                 .sorted(Comparator.comparingDouble(Scored::score).reversed())
-                .limit(retrieval.getTopK())
-                .map(Scored::memory)
                 .toList();
 
+        List<Memory> relevant = applyJudgeRerank(message, ranked);
         if (!relevant.isEmpty()) {
             return relevant;
         }
         return active.stream().limit(FALLBACK_CONTEXT).toList();
+    }
+
+    /**
+     * Com o filtro do juiz ligado, a decisão de corte passa para uma chamada
+     * LLM: o juiz vê até {@code judgeRerankMaxCandidates} candidatos do topo da
+     * ordenação por score e devolve os ids relevantes; o teto de contexto
+     * ({@code topK}) continua se aplicando, agora sobre a seleção do juiz.
+     * Resposta ilegível ou indisponibilidade degradam para a ordenação antiga.
+     */
+    private List<Memory> applyJudgeRerank(String message, List<Scored> ranked) {
+        List<Memory> legacy = ranked.stream()
+                .limit(retrieval.getTopK())
+                .map(Scored::memory)
+                .toList();
+        if (!retrieval.isJudgeRerank() || ranked.size() < 2) {
+            return legacy;
+        }
+        List<Memory> candidates = ranked.stream()
+                .limit(retrieval.getJudgeRerankMaxCandidates())
+                .map(Scored::memory)
+                .toList();
+        Optional<List<UUID>> judged = judgeReranker.select(message, candidates);
+        if (judged.isEmpty()) {
+            log.warn("Re-ranking pelo juiz indisponivel, mantendo ordenacao por score");
+            return legacy;
+        }
+        Set<UUID> selected = new HashSet<>(judged.get());
+        return ranked.stream()
+                .map(Scored::memory)
+                .filter(memory -> selected.contains(memory.getId()))
+                .limit(retrieval.getTopK())
+                .toList();
     }
 
     private Map<UUID, Double> semanticMatches(String userId, String message, Set<UUID> eligible) {
