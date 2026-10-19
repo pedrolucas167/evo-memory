@@ -1,4 +1,4 @@
-package com.polon.evomemory.application.model;
+package com.polon.evomemory.application.model.response;
 
 import java.util.UUID;
 import java.util.List;

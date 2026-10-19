@@ -1,7 +1,7 @@
 package com.polon.evomemory.infrastructure.web;
-import com.polon.evomemory.application.model.ReindexResult;
-import com.polon.evomemory.application.model.ChatResponse;
-import com.polon.evomemory.application.model.AssistantReply;
+import com.polon.evomemory.application.model.response.ReindexResult;
+import com.polon.evomemory.application.model.response.ChatResponse;
+import com.polon.evomemory.application.model.response.AssistantReply;
 
 import java.util.List;
 import java.util.UUID;

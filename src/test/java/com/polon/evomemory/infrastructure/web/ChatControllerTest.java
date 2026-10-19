@@ -1,6 +1,7 @@
 package com.polon.evomemory.infrastructure.web;
-import com.polon.evomemory.application.model.MemoryView;
-import com.polon.evomemory.application.model.ChatResponse;
+import com.polon.evomemory.application.model.response.MemoryView;
+import com.polon.evomemory.application.model.response.ChatResponse;
+import com.polon.evomemory.infrastructure.web.request.ChatRequest;
 import com.polon.evomemory.domain.memory.MemoryKind;
 import com.polon.evomemory.domain.memory.MemoryStatus;
 

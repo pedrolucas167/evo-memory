@@ -30,9 +30,9 @@ import com.polon.evomemory.domain.memory.OlsRerank;
 import com.polon.evomemory.application.ports.MemoryRecallPort;
 import com.polon.evomemory.application.ports.VectorStorePort;
 import com.polon.evomemory.domain.memory.Memory;
-import com.polon.evomemory.application.model.AssistantReply;
-import com.polon.evomemory.application.model.ChatResponse;
-import com.polon.evomemory.application.model.MemoryView;
+import com.polon.evomemory.application.model.response.AssistantReply;
+import com.polon.evomemory.application.model.response.ChatResponse;
+import com.polon.evomemory.application.model.response.MemoryView;
 
 @Service
 public class AssistantService {

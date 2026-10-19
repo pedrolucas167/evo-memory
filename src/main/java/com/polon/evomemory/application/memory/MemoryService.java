@@ -28,7 +28,7 @@ import com.polon.evomemory.domain.memory.EpisodeSource;
 import com.polon.evomemory.domain.memory.Episode;
 import com.polon.evomemory.domain.memory.Memory;
 import com.polon.evomemory.domain.memory.MemoryRevisionDomain;
-import com.polon.evomemory.application.model.ReindexResult;
+import com.polon.evomemory.application.model.response.ReindexResult;
 
 @Service
 public class MemoryService implements com.polon.evomemory.application.ports.MemoryRecallPort {

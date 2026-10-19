@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.polon.evomemory.application.model.ChatResponse;
-import com.polon.evomemory.application.model.MemoryView;
+import com.polon.evomemory.application.model.response.ChatResponse;
+import com.polon.evomemory.application.model.response.MemoryView;
 
 @Service
 public class ConversationService implements com.polon.evomemory.application.ports.ConversationPort {
