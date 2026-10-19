@@ -109,6 +109,8 @@ Configuração (`memory.retrieval`):
 |---|---|---|---|
 | `attention-rerank-weight` | `RETRIEVAL_ATTENTION_WEIGHT` | `0.0` | mistura final `(1 − peso)·cru + peso·ŷ`; 0 desativa |
 | `attention-rerank-ridge` | `RETRIEVAL_ATTENTION_RIDGE` | `0.1` | ridge λ do `OlsRerank` |
+| `judge-rerank` | `RETRIEVAL_JUDGE_RERANK` | `true` | filtro de relevância pelo modelo juiz antes do corte |
+| `judge-rerank-max-candidates` | `RETRIEVAL_JUDGE_MAX_CANDIDATES` | `16` | candidatos, do topo da ordenação, que o juiz avalia |
 
 Status medido (A/B na mesma máquina e mesma manhã de 19 de outubro):
 
@@ -136,8 +138,8 @@ similaridade admite fatos não relacionados porque os embeddings os colocam a
 ±0,04 da resposta certa. Direções candidatas para o caso: calibração do limiar
 por conjunto (risco de fragilidade), re-ranking supervisionado pelo modelo
 juiz (custo por consulta) e filtros de composição/validade (rotinas correntes
-vs. conteúdo da pergunta). O re-ranking permanece **desligado por padrão**, com
-falha na leitura dos vetores degradando para os scores crus.
+vs. conteúdo da pergunta). O re-ranking espectral permanece **desligado por
+padrão**, com falha na leitura dos vetores degradando para os scores crus.
 
 ### Segundo experimento: corte absoluto também não sustenta o caso (19/10)
 
@@ -152,9 +154,35 @@ O intervalo é invertido: a reformulação do distrator supera a memória
 correta, então não existe corte absoluto que mantenha uma e exclua outra.
 Cortes determinísticos esgotados na prática (embeddings a ±0,04, Gram denso,
 `MemoryKind` empatado — professor e filhos são ambos `FACT` — e sinal temporal
-neutro, pois o benchmark semeia tudo no mesmo segundo). O caso `profissao-por-situacao`
-só cede a julgamento semântico no momento da consulta (modelo juiz, custo por
-consulta) ou permanece limitação conhecida documentada.
+neutro, pois o benchmark semeia tudo no mesmo segundo).
+
+### Terceiro experimento: filtro de relevância pelo modelo juiz (19/10)
+
+Com os caminhos determinísticos esgotados por medição, o corte passa a uma
+chamada LLM por consulta (`JudgeReranker`): o modelo juiz, com temperatura 0,
+recebe a mensagem e até 16 candidatos do topo da ordenação e devolve JSON
+`{"relevant": [...]}`; a resposta ilegível degrada para a ordenação por score
+e o teto de contexto (`topK`) continua se aplicando. Conteúdo de memória é
+dado não confiável: o parser aceita apenas números dentro do intervalo
+informado, então o pior caso de injeção via memória é adiantar o comportamento
+legado.
+
+Medição na mesma manhã (`RETRIEVAL_JUDGE_RERANK=true`):
+
+| Experimento | legado (manhã, 4 rodadas) | juiz ligado |
+|---|---|---|
+| R@5 `retrieval_v2.json` (`profissao-por-situacao`) | 5/6 em todas | **6/6, 6/6, 6/6** |
+| Calibração | 5/5 | 5/5 |
+| Held-out | 6/6 | 6/6 |
+| Temporal (sanidade, 1 repetição) | 6/6 verificações | 2/2 verificações |
+
+Primeira configuração que fecha o caso aberto com zero regressão, em três
+rodadas consecutivas (as anteriores oscilavam entre 5/6 e 6/6 pela redação da
+extração). Por medição, o padrão do filtro ficou **ligado** — o custo é uma
+chamada LLM por consulta, e `RETRIEVAL_JUDGE_RERANK=false` desfaz em uma
+variável. A leitura de atenção OLS segue disponível para experimentos
+(`RETRIEVAL_ATTENTION_WEIGHT`), desligada por padrão, com os dois resultados
+negativos acima documentados.
 
 ## Resultados preliminares
 

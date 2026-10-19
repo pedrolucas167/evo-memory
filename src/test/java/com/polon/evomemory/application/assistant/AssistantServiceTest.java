@@ -50,6 +50,9 @@ class AssistantServiceTest {
     @Mock
     private VectorStorePort vectorStore;
 
+    @Mock
+    private JudgeReranker judgeReranker;
+
     private final AtomicReference<LlmRequest> captured = new AtomicReference<>();
 
     private AssistantService assistant(EmbeddingClient embeddings) {
@@ -64,7 +67,7 @@ class AssistantServiceTest {
             return "resposta";
         };
         return new AssistantService(memoryService, conversationService, client, properties,
-                embeddings, vectorStore, retrievalProperties, FIXED_CLOCK);
+                embeddings, vectorStore, retrievalProperties, judgeReranker, FIXED_CLOCK);
     }
 
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC);
@@ -373,5 +376,69 @@ class AssistantServiceTest {
         assistant(text -> new float[] {0.1f}).chat("user", "conv", "Quero entender replicação de dados.");
 
         verify(vectorStore, never()).vectors(any());
+    }
+
+    @Test
+    void judgeFilterExcludesDistractorWhileKeepingRelevant() {
+        Memory distributed = memory(MemoryKind.INTEREST, "sistemas-distribuidos",
+                "Está estudando sistemas distribuídos.");
+        Memory cooking = memory(MemoryKind.PREFERENCE, "culinaria", "Gosta de culinária italiana.");
+        Memory kids = memory(MemoryKind.FACT, "filhos", "Tem dois filhos pequenos.");
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of(distributed, cooking, kids));
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of(
+                new VectorStorePort.Match(distributed.getId(), 0.70),
+                new VectorStorePort.Match(cooking.getId(), 0.68),
+                new VectorStorePort.Match(kids.getId(), 0.66)));
+        when(judgeReranker.select(eq("Quero revisar consistência em sistemas distribuídos."), any()))
+                .thenReturn(java.util.Optional.of(List.of(distributed.getId())));
+
+        RetrievalProperties withJudge = new RetrievalProperties();
+        withJudge.setJudgeRerank(true);
+        withJudge.setJudgeRerankMaxCandidates(8);
+        assistant(text -> new float[] {0.1f}, withJudge)
+                .chat("user", "conv", "Quero revisar consistência em sistemas distribuídos.");
+
+        // O teto de contexto agora incide sobre a seleção do juiz.
+        assertThat(captured.get().userPrompt()).contains("Está estudando sistemas distribuídos.");
+        assertThat(captured.get().userPrompt()).doesNotContain("Gosta de culinária italiana.")
+                .doesNotContain("Tem dois filhos pequenos.");
+    }
+
+    @Test
+    void judgeFailureDegradesToScoreOrder() {
+        Memory distributed = memory(MemoryKind.INTEREST, "sistemas-distribuidos",
+                "Está estudando sistemas distribuídos.");
+        Memory cooking = memory(MemoryKind.PREFERENCE, "culinaria", "Gosta de culinária italiana.");
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of(distributed, cooking));
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of(
+                new VectorStorePort.Match(distributed.getId(), 0.70),
+                new VectorStorePort.Match(cooking.getId(), 0.68)));
+        when(judgeReranker.select(anyString(), any())).thenReturn(java.util.Optional.empty());
+
+        RetrievalProperties withJudge = new RetrievalProperties();
+        withJudge.setJudgeRerank(true);
+        assistant(text -> new float[] {0.1f}, withJudge)
+                .chat("user", "conv", "Quero revisar consistência em sistemas distribuídos.");
+
+        assertThat(captured.get().userPrompt()).contains("Está estudando sistemas distribuídos.");
+        assertThat(captured.get().userPrompt()).contains("Gosta de culinária italiana.");
+    }
+
+    @Test
+    void judgeIsNotConsultedWhenDisabled() {
+        RetrievalProperties withoutJudge = new RetrievalProperties();
+        withoutJudge.setJudgeRerank(false);
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of());
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of());
+
+        assistant(text -> new float[] {0.1f}, withoutJudge).chat("user", "conv", "Oi.");
+
+        verify(judgeReranker, never()).select(anyString(), any());
     }
 }
