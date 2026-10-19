@@ -1,5 +1,5 @@
 package com.polon.evomemory.infrastructure.web;
-import com.polon.evomemory.application.model.ReindexResult;
+import com.polon.evomemory.application.model.response.ReindexResult;
 
 import java.util.Map;
 import java.util.List;
@@ -33,17 +33,17 @@ public class MemoryController {
     }
 
     @org.springframework.web.bind.annotation.PatchMapping("/{userId}/{memoryId}")
-    public com.polon.evomemory.application.model.MemoryView correct(@PathVariable String userId,
+    public com.polon.evomemory.application.model.response.MemoryView correct(@PathVariable String userId,
             @PathVariable java.util.UUID memoryId,
             @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody Correction correction) {
-        return com.polon.evomemory.application.model.MemoryView.from(
+        return com.polon.evomemory.application.model.response.MemoryView.from(
                 memoryService.correct(userId, memoryId, correction.content()));
     }
 
     @org.springframework.web.bind.annotation.DeleteMapping("/{userId}/{memoryId}")
-    public com.polon.evomemory.application.model.MemoryView forget(@PathVariable String userId,
+    public com.polon.evomemory.application.model.response.MemoryView forget(@PathVariable String userId,
             @PathVariable java.util.UUID memoryId) {
-        return com.polon.evomemory.application.model.MemoryView.from(memoryService.forget(userId, memoryId));
+        return com.polon.evomemory.application.model.response.MemoryView.from(memoryService.forget(userId, memoryId));
     }
 
     @GetMapping("/{userId}/{memoryId}/history")

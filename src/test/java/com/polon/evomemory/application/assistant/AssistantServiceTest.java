@@ -35,8 +35,8 @@ import com.polon.evomemory.application.memory.ConversationService;
 import com.polon.evomemory.application.memory.MemoryService;
 import com.polon.evomemory.application.ports.VectorStorePort;
 import com.polon.evomemory.domain.memory.Memory;
-import com.polon.evomemory.application.model.ChatResponse;
-import com.polon.evomemory.application.model.MemoryView;
+import com.polon.evomemory.application.model.response.ChatResponse;
+import com.polon.evomemory.application.model.response.MemoryView;
 
 @ExtendWith(MockitoExtension.class)
 class AssistantServiceTest {

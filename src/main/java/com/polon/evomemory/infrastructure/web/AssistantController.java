@@ -1,5 +1,6 @@
 package com.polon.evomemory.infrastructure.web;
-import com.polon.evomemory.application.model.AssistantReply;
+import com.polon.evomemory.application.model.response.AssistantReply;
+import com.polon.evomemory.infrastructure.web.request.AssistantRequest;
 
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;

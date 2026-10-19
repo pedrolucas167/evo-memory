@@ -1,5 +1,6 @@
 package com.polon.evomemory.infrastructure.web;
-import com.polon.evomemory.application.model.ChatResponse;
+import com.polon.evomemory.application.model.response.ChatResponse;
+import com.polon.evomemory.infrastructure.web.request.ChatRequest;
 
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
