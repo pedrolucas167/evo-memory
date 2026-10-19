@@ -224,7 +224,7 @@ dois jobs:
   A auditoria cobre dependências do build, não certifica ausência de
   vulnerabilidades nem analisa alcance.
 - **security-scan**: análise de sistema de arquivos com Trivy
-  (versão fixada em `0.28.0`), severidade HIGH/CRITICAL e `ignore-unfixed`
+  (versão fixada em `v0.36.0`), severidade HIGH/CRITICAL e `ignore-unfixed`
   ativado. O relatório SARIF vai para o GitHub Security; por política do
   projeto (`exit-code: '0'`), avisos conhecidos com correção pendente no
   upstream (ex.: spring-webmvc) não derrubam o pipeline.
