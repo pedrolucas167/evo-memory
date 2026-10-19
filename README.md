@@ -86,27 +86,36 @@ reais, nem substitui os benchmarks HTTP.
 
 ## Resultados preliminares
 
-Rodada local de **13 de outubro de 2026**, com dados sintéticos:
+Rodada local de **19 de outubro de 2026**, com dados sintéticos e a regra de
+confirmação pela atenção OLS ativa:
 
 | Experimento | Amostra | Resultado observado |
 |---|---|---|
-| Recuperação independente, `retrieval_v2.json` | 6 casos | 5/6 aprovados |
-| Evo Memory temporal | 2 cenários | Ambos passaram; 4/4 verificações de resposta |
-| Baseline de histórico completo | Os mesmos 2 cenários | 4/4 verificações de resposta |
+| Recuperação R@5, `retrieval_v2.json` (mini-benchmark) | 6 casos | 5/6 aprovados |
+| Recuperação — calibração | 5 casos | 5/5 aprovados |
+| Recuperação — conjunto held-out | 6 casos | 6/6 aprovados |
+| Evo Memory temporal | 2 cenários × 3 repetições | 6/6 verificações de resposta |
+| Baseline de histórico completo | Os mesmos 2 cenários × 3 repetições | 6/6 verificações de resposta |
 
-Nos cenários temporais, o Evo Memory também registrou a contradição, aceitou a
-correção explícita e manteve o esquecimento lógico após uma nova observação com
-a mesma chave de assunto. Na rodada temporal final, o servidor usou Spring
-Boot 3.5.16, chat e extração `openai/gpt-6-luna` e embeddings `baai/bge-m3`.
-O baseline utilizou o mesmo modelo de chat, sem extração nem busca vetorial.
+Nos cenários temporais, o Evo Memory registrou a contradição, aceitou a
+correção explícita e manteve o esquecimento lógico em todas as repetições,
+igualando o baseline. O contexto nesta rodada veio do modelo de chat e
+extração `openai/gpt-6-luna` com embeddings `baai/bge-m3`, rodando em
+`127.0.0.1:8090` (a porta 8080 estava ocupada por uma aplicação local não
+relacionada; os scripts HTTP aceitam `--base`).
 
-O caso de recuperação que falhou trouxe informações de natação e filhos junto
-da memória correta sobre profissão. O resultado atual de 5/6 não deve ser
-substituído pelos resultados históricos de 6/6 de outras rodadas.
+O caso de recuperação que falhou segue sendo o mesmo da rodada de 13 de
+outubro: na pergunta sobre profissão, os distratores de natação e filhos
+entraram no top-5 junto da memória correta. Isso alimenta o próximo passo
+planejado: re-ranking com a codificação espectral do OLS. O mini-benchmark
+também ganhou normalização de acento/caixa (`História` vs `historia`,
+`manhã` vs `manha`) que reprovarava contexto correto por questão de script.
 
-**Conclusão até aqui:** o fluxo funciona nos casos curtos testados, mas ainda
-não mostrou vantagem sobre o histórico completo. Não há demonstração de ganho
-de processamento, consistência em históricos longos ou superioridade
+**Conclusão até aqui:** o fluxo funciona nos casos curtos testados e o
+conjunto held-out passou integralmente nesta rodada, mas ainda não mostrou
+vantagem sobre o histórico completo. A atenção OLS não demonstrou ganho de
+qualidade de recuperação: o caso de distratores segue aberto. Não há
+demonstração de consistência em históricos longos ou superioridade
 estatística. LongMemEval e LoCoMo ainda não foram replicados.
 
 Como verificação de engenharia, a implementação passou em **79 testes locais**
