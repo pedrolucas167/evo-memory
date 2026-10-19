@@ -1,0 +1,3 @@
+# Scripts de avaliação usam apenas bibliotecas da biblioteca padrão do Python.
+# Não há dependências externas para instalar via pip.
+# Python 3.11+ é recomendado.

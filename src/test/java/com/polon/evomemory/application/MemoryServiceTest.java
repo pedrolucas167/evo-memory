@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,41 @@ class MemoryServiceTest {
     private final MemoryService service = new MemoryService(store, classifier,
             Clock.fixed(now, ZoneOffset.UTC), embeddings, vectors, new LlmProperties(), new MemoryEvolutionService());
     private final Episode episode = new Episode(UUID.randomUUID(), "user", "conv", "test", EpisodeSource.CHAT, now);
+
+    @Test
+    void confirmationUsesOlsAttentionReadingFromVectorStore() {
+        var memory = memory();
+        var candidate = new CandidateMemory(MemoryKind.PLAN, "trip", "again", 0.7);
+        when(store.findBySubject("user", "trip")).thenReturn(Optional.of(memory));
+        when(store.findActiveByUser("user")).thenReturn(List.of(memory));
+        when(embeddings.embed("again")).thenReturn(new float[]{1, 0});
+        when(vectors.nearest(eq("user"), any(), eq(10))).thenReturn(List.of(new VectorStorePort.Match(memory.getId(), 0.9)));
+        when(classifier.classify(memory, candidate)).thenReturn(
+                new ChangeClassifier.Decision(ChangeType.CONFIRMED, "old", "same"));
+
+        service.observe("user", episode, candidate);
+
+        // atencao = 0,9 * 0,9 = 0,81 -> taxa 0,181 -> 0,9 + 0,181 * 0,1
+        assertThat(memory.getConfidence()).isEqualTo(0.9181, within(1e-9));
+        assertThat(memory.getEvidenceCount()).isEqualTo(2);
+    }
+
+    @Test
+    void confirmationDegradesToLegacyGainWithoutVectorIndex() {
+        var memory = memory();
+        var candidate = new CandidateMemory(MemoryKind.PLAN, "trip", "again", 0.7);
+        when(store.findBySubject("user", "trip")).thenReturn(Optional.of(memory));
+        when(embeddings.embed("again")).thenReturn(new float[]{1, 0});
+        when(vectors.nearest(isA(String.class), any(), anyInt()))
+                .thenThrow(new IllegalStateException("vector store off"));
+        when(classifier.classify(memory, candidate)).thenReturn(
+                new ChangeClassifier.Decision(ChangeType.CONFIRMED, "old", "same"));
+
+        service.observe("user", episode, candidate);
+
+        // atencao 0: taxa legada de 0,1
+        assertThat(memory.getConfidence()).isEqualTo(0.91, within(1e-9));
+    }
 
     private Memory memory() {
         return new Memory(UUID.randomUUID(), "user", MemoryKind.PLAN, "trip", "old", 0.9, episode.getId(), now);

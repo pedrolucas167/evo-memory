@@ -17,6 +17,21 @@ class MemoryEvolutionTest {
         assertEquals(4, original.version());
     }
 
+    @Test
+    void readingScalesConfirmationGainWithinLimits() {
+        var fullest = MemoryEvolution.evolve(original, ChangeType.CONFIRMED, "ignored", 0.2, now, 1.0);
+        assertEquals(0.84, fullest.confidence(), 1e-9); // taxa 0,2
+
+        var attended = MemoryEvolution.evolve(original, ChangeType.CONFIRMED, "ignored", 0.2, now, 0.5);
+        assertEquals(0.83, attended.confidence(), 1e-9); // taxa 0,15
+
+        var dissimilar = MemoryEvolution.evolve(original, ChangeType.CONFIRMED, "ignored", 0.2, now, -3.0);
+        assertEquals(0.82, dissimilar.confidence(), 1e-9); // clamp em 0: regra legada
+
+        var saturated = MemoryEvolution.evolve(original, ChangeType.CONFIRMED, "ignored", 0.2, now, 9.0);
+        assertEquals(0.84, saturated.confidence(), 1e-9); // clamp em 1
+    }
+
     private final Instant before = Instant.parse("2026-01-01T00:00:00Z");
     private final Instant now = Instant.parse("2026-01-02T00:00:00Z");
     private final MemoryEvolution.State original = new MemoryEvolution.State(

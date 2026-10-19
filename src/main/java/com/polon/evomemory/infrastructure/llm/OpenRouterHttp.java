@@ -84,9 +84,10 @@ public class OpenRouterHttp {
         }
     }
 
-    private static void pause(int attempt) {
+    private void pause(int attempt) {
+        long base = Math.max(0, properties.getRetryBackoffMillis());
         try {
-            Thread.sleep(2000L * (1L << (attempt - 1)));
+            Thread.sleep(base * (1L << (attempt - 1)));
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
         }
