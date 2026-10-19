@@ -1,4 +1,4 @@
-package com.polon.evomemory.infrastructure.web;
+package com.polon.evomemory.infrastructure.web.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
