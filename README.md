@@ -25,6 +25,55 @@ ainda não foi demonstrada pelos experimentos atuais.
 As regras de evolução ficam em `domain/`, os casos de uso e contratos em
 `application/` e os detalhes de HTTP, modelos e banco em `infrastructure/`.
 
+## Atenção OLS na evolução de memória
+
+A evolução de confirmação usa o mecanismo de atenção de mínimos quadrados
+ordinários (OLS) de Goulet Coulombe: toda predição OLS é equivalente a um
+módulo de atenção com pesos em forma fechada. Três vistas do mesmo resultado:
+
+| Vista do paper | Fórmula | Papel no Evo Memory |
+|---|---|---|
+| Coeficientes | `ŷ_j = x_j β̂`, `β̂ = (X'X)⁻¹ X'y` | β̂ mapeia atributos da evidência à confiança esperada |
+| Similaridade | `ŷ_j = Σᵢ ⟨F_j, F_i⟩ y_i` com `F = X U Λ^(-1/2)` | o quanto a evidência nova "olha" para cada memória armazenada, tomando suas confianças |
+| Atenção | `ŷ_j = g(Q_j K' V)` com `g` = identidade | consulta = evidência nova; chaves = memórias ativas; valores = confianças; sem softmax |
+
+O embedding espectral de `X'X = U Λ U'` é o **embedding ótimo**: é a única
+métrica de similaridade por produto interno que minimiza o erro quadrático de
+predição para todo vetor de resultados `y`.
+
+Onde cada peça vive no código:
+
+| Código | Responsabilidade |
+|---|---|
+| `domain/memory/OlsAttention.java` | mecanismo completo, Java puro: decomposição espectral por rotações de Jacobi, codificação ótima `F = X U Λ^(-1/2)`, ridge nos autovalores nulos, e as três vistas equivalentes (a classe valida internamente a identidade `x_j β̂ ≡ Σᵢ ⟨F_j, F_i⟩ y_i`) |
+| `domain/memory/MemoryEvolution.java` | sobrecarga `evolve(..., attention)`: a leitura de atenção (limitada a [0, 1]) escala a taxa de reforço da confirmação de 0,1 para 0,1 + 0,1·Atenção; sem atenção, comportamento legado |
+| `application/memory/MemoryService.java` | em observações de confirmação, `attentionReading` calcula `ŷ = Σᵢ wᵢ·yᵢ` com similaridades do `VectorStorePort.nearest` (pesos) e confianças das memórias ativas do usuário (valores); falha do índice devolve 0 |
+| `application/MemoryEvolutionService.java` | ponte da aplicação para o domínio |
+
+Desvios honestos do paper, documentados para experimentação futura: a porta
+vetorial atual expõe apenas similaridades, então `MemoryService` usa o kernel
+de cosseno como aproximação de `⟨F_j, F_i⟩`; a codificação espectral completa
+(`OlsAttention`) está pronta e testada para quando houver acesso aos vetores
+brutos `X`. O piso de ridge regulariza o `X'X` singular de poucas evidências,
+o que diverge do OLS exato do paper. A influência observável está limitada: a
+atenção só muda a taxa de reforço de confirmações (0,1 a 0,2 por evidência) e
+nunca altera conteúdo nem classificação do juiz.
+
+Verificação offline (benchmark determinístico, `OlsAttentionBenchmarkTest`,
+executado no `mvn test` do CI, semente fixa):
+
+| Verificação | Escala | Resultado |
+|---|---|---|
+| Estabilidade e consistência das vistas em escala | 300 evidências × 8 atributos | predição finita; coeficiente ≡ similaridade; ordem das linhas não altera predição |
+| Custo computacional | a mesma consulta | ~2 ms por leitura (limite de segurança no CI: 10 s) |
+| Colinearidade (colunas idênticas, `X'X` singular) | 50 evidências × 3 atributos recolhidos | piso de ridge mantém tudo finito |
+| Varredura do reforço pela atenção | 201 leituras de atenção | confiança monótona na atenção, teto em 1,0 |
+
+Esses números são verificação de engenharia do mecanismo, não resultados de
+qualidade de memória. Os benchmarks HTTP (recuperação R@5, temporal e
+baseline) seguem exigindo o servidor em execução e chave do OpenRouter e não
+foram rerotulados nesta rodada offline.
+
 ## Resultados preliminares
 
 Rodada local de **13 de outubro de 2026**, com dados sintéticos:
@@ -50,8 +99,10 @@ não mostrou vantagem sobre o histórico completo. Não há demonstração de ga
 de processamento, consistência em históricos longos ou superioridade
 estatística. LongMemEval e LoCoMo ainda não foram replicados.
 
-Como verificação de engenharia, a implementação passou em **68 testes locais**
-na compilação limpa. Esse número não mede a qualidade da memória.
+Como verificação de engenharia, a implementação passou em **78 testes locais**
+na compilação limpa (incluindo a verificação de consistência das três vistas
+e um benchmark offline determinístico do mecanismo de atenção OLS). Esse
+número não mede a qualidade da memória.
 
 ## Limites da avaliação
 
@@ -161,6 +212,16 @@ PostgreSQL com pgvector armazena `episode`, `semantic_memory` e
 `memory_revision`; Flyway aplica as migrações em
 `src/main/resources/db/migration/`.
 
+## CI/CD
+
+O projeto usa GitHub Actions para CI/CD. O workflow em `.github/workflows/ci.yml` executa:
+
+- **Build e testes Maven**: Compilação e execução dos 78 testes unitários
+- **Auditoria de dependências**: Verificação de vulnerabilidades via OSV
+- **Scan de segurança**: Análise de vulnerabilidades com Trivy
+
+O pipeline é acionado em push para branches `main` e `develop`, e em pull requests.
+
 ## Limites operacionais e privacidade
 
 O projeto é um ambiente de pesquisa, não uma solução de produção certificada.
@@ -178,6 +239,62 @@ O projeto é um ambiente de pesquisa, não uma solução de produção certifica
   constituem quota financeira ou defesa distribuída.
 - A reindexação ainda percorre todas as memórias ativas e precisa de paginação
   para uso em grande escala.
-- A consulta final à OSV apontou avisos no Spring MVC relacionados a recursos
-  de streaming e XSLT não encontrados nas rotas atuais. Isso não certifica
-  ausência de vulnerabilidades; reexecute a consulta ao atualizar dependências.
+- A consulta à OSV em 19/10/2026 confirmou avisos no Spring MVC 6.2.19
+  (`GHSA-j9f9-w8pj-32f8`, streaming de recursos, e `GHSA-pc63-qcmh-9cmg`,
+  XSLT), sem rotas ativas afetadas nas auditorias anteriores. Isso não
+  certifica ausência de vulnerabilidades; reexecute a consulta ao atualizar
+  dependências.
+
+## Referências de estudo
+
+Materiais que fundamentam o mecanismo de atenção OLS e o contexto do projeto.
+
+Atenção OLS (mecanismo implementado):
+
+- Goulet Coulombe, P. (2026). **Ordinary Least Squares as an Attention
+  Mechanism**. Aceito no NeurIPS 2026, trilha principal. Versão livre em
+  arXiv: <https://arxiv.org/abs/2504.09663> (DOI:
+  <https://doi.org/10.48550/arXiv.2504.09663>). A visão de similaridade
+  (Σᵢ ⟨F_j, F_i⟩ y_i com F = XUΛ^(-1/2)) e a equivalência com o módulo de
+  atenção Q-K-V orientam a integração descrita na seção acima.
+- Vaswani, A. et al. (2017). **Attention Is All You Need**. NeurIPS 2017.
+  <https://arxiv.org/abs/1706.03762>. Referência original de atenção Q-K-V e
+  do softmax que o paper do OLS substitui pela identidade.
+
+Memória de longo prazo e avaliação:
+
+- Maharana, A., Lee, D.-H., Tulyakov, S., Bansal, M., Barbieri, F., Fang, Y.
+  (2024). **Evaluating Very Long-Term Conversational Memory of LLM Agents**
+  (dataset LoCoMo). ACL 2024. <https://arxiv.org/abs/2402.17753>. Benchmark
+  de conversas longas citado nos limites da avaliação.
+- Wu, D., Wang, H., Yu, W., Zhang, Y., Chang, K.-W., Yu, D. (2025).
+  **LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive
+  Memory**. ICLR 2025. <https://arxiv.org/abs/2410.10813>. Benchmark de
+  memória interativa de longo prazo citado nos limites da avaliação.
+
+Estatística e métodos dos experimentos:
+
+- Hastie, T., Tibshirani, R., Friedman, J. (2009). **The Elements of
+  Statistical Learning**, 2.ª ed., Springer. Base para regressão, regularização
+  tipo ridge e decomposição de matrizes usadas no `OlsAttention`.
+
+Vídeos de estudo — atenção Q-K-V e projeções do OLS:
+
+- 3Blue1Brown (2024). **Attention in transformers, step-by-step**
+  (Deep Learning, capítulo 6). <https://www.youtube.com/watch?v=eMlx5fFNoYc>.
+  Intuição geométrica de Queries, Keys e Values operando por produtos internos
+  (similaridade) para ponderar valores — é exatamente a leitura de
+  `⟨F_j, F_i⟩ y_i` da vista de similaridade implementada em `OlsAttention`.
+- Umar Jamil. **Attention is all you need (Transformer) — Model explanation**.
+  <https://www.youtube.com/watch?v=sznZ78HquPc>. Equações matriciais do módulo
+  de atenção e projeções de vetores — útil para ver por que `g(Q_j K' V)` com
+  `g` identidade (sem softmax) é o caso do paper.
+- StatQuest with Josh Starmer. **Linear Regression, Clearly Explained!!!**
+  <https://www.youtube.com/watch?v=7ArmBVF2dCs>. Intuição sobre OLS e ajuste
+  por mínimos quadrados — o ponto de partida da vista de coeficientes.
+- Gilbert Strang (MIT OpenCourseWare, MIT 18.06). **Projections onto
+  Subspaces / Least Squares Approximation**.
+  <https://www.youtube.com/watch?v=Y_Ac6KiQ1t0>. Demonstração geométrica
+  rigorosa da matriz de projeção `X(X'X)⁻¹X'` — a fundação da equivalência
+  entre as vistas de coeficiente e de similaridade, e do papel de
+  `F = XUΛ^(-1/2)` como espaço ortogonal comparado por produto interno.

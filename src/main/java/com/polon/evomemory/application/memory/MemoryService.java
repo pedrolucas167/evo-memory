@@ -5,7 +5,9 @@ import com.polon.evomemory.domain.memory.ChangeType;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +34,7 @@ import com.polon.evomemory.application.model.ReindexResult;
 public class MemoryService implements com.polon.evomemory.application.ports.MemoryRecallPort {
 
     private static final Logger log = LoggerFactory.getLogger(MemoryService.class);
+    private static final int NEIGHBORS = 10;
 
     private final MemoryStorePort store;
     private final ChangeClassifier classifier;
@@ -91,7 +94,11 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
         }
         double confidence = decision.type() == ChangeType.COMPLEMENTED
                 ? Math.max(previousConfidence, candidate.confidence()) : candidate.confidence();
-        memory.apply(evolution.evolve(memory.state(), decision.type(), decision.content(), confidence, now));
+        // Atenção OLS apenas onde muda a regra de reforço (confirmação); demais mudanças não a usam.
+        double attention = decision.type() == ChangeType.CONFIRMED
+                ? attentionReading(userId, candidate) : 0.0;
+        memory.apply(evolution.evolve(memory.state(), decision.type(), decision.content(), confidence, now,
+                attention));
 
         if (decision.type() == ChangeType.CONTRADICTED) {
             // Uma nova contradição substitui a validade; sem data nova, o plano anterior deixa de ter prazo.
@@ -184,6 +191,35 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
         } catch (RuntimeException error) {
             log.warn("Nao foi possivel indexar uma memoria");
             return false;
+        }
+    }
+
+    /**
+     * Leitura de atenção OLS (vista de similaridade, arXiv:2504.09663): a evidência nova é a
+     * consulta Q_j; as memórias ativas do usuário são as chaves K; suas confianças são os
+     * valores V; g é a identidade, no lugar do softmax. Os pesos usam similaridades do
+     * armazém vetorial como aproximação de ⟨F_j, F_i⟩; o embedding ótimo F = X U Λ^{-1/2}
+     * completo está implementado em OlsAttention para quando houver acesso aos vetores brutos.
+     * Falha empírica ou falta de índice devolve 0, preservando a regra legada de reforço.
+     */
+    private double attentionReading(String userId, CandidateMemory candidate) {
+        try {
+            Map<UUID, Double> similarities = new HashMap<>();
+            for (VectorStorePort.Match match : vectorStore.nearest(userId,
+                    embeddingClient.embed(candidate.content()), NEIGHBORS)) {
+                similarities.put(match.memoryId(), match.similarity());
+            }
+            double reading = 0.0;
+            for (Memory memory : store.findActiveByUser(userId)) {
+                Double similarity = similarities.get(memory.getId());
+                if (similarity != null) {
+                    // ŷ_j = Σ_i ⟨F_j, F_i⟩ y_i, com y_i igual à confiança da memória i.
+                    reading += similarity * memory.getConfidence();
+                }
+            }
+            return reading;
+        } catch (RuntimeException error) {
+            return 0.0;
         }
     }
 
