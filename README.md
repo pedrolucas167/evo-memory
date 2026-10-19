@@ -139,6 +139,23 @@ juiz (custo por consulta) e filtros de composição/validade (rotinas correntes
 vs. conteúdo da pergunta). O re-ranking permanece **desligado por padrão**, com
 falha na leitura dos vetores degradando para os scores crus.
 
+### Segundo experimento: corte absoluto também não sustenta o caso (19/10)
+
+A candidatura "calibrar o limiar" foi refutada por medição na mesma manhã.
+Com `RETRIEVAL_MIN_SIMILARITY = 0,41`, três rodadas do mini-benchmark deram
+5/6, 6/6, 5/6 — os outros casos nunca regrediram, mas o caso alvo oscila com a
+**redação que a extração produz**: o extrator reformula a memória semeada
+("aprendendo a nadar **e pratica** três vezes por semana" vira "aprendendo a
+nadar três vezes por semana"), e os embeddings das duas redações contra a
+pergunta são 0,4003 e **0,4169** — enquanto a memória correta fica em 0,4127.
+O intervalo é invertido: a reformulação do distrator supera a memória
+correta, então não existe corte absoluto que mantenha uma e exclua outra.
+Cortes determinísticos esgotados na prática (embeddings a ±0,04, Gram denso,
+`MemoryKind` empatado — professor e filhos são ambos `FACT` — e sinal temporal
+neutro, pois o benchmark semeia tudo no mesmo segundo). O caso `profissao-por-situacao`
+só cede a julgamento semântico no momento da consulta (modelo juiz, custo por
+consulta) ou permanece limitação conhecida documentada.
+
 ## Resultados preliminares
 
 Rodada local de **19 de outubro de 2026**, com dados sintéticos e a regra de
