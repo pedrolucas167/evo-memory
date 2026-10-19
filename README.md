@@ -7,8 +7,10 @@ ou se contradiz ao longo das conversas.
 O sistema registra experiências como **memória episódica**, extrai delas um
 estado de **memória semântica** e preserva as revisões desse estado. A hipótese
 de pesquisa é que atualizações explícitas e versionamento possam reduzir o uso
-de informações obsoletas sob um orçamento de contexto controlado. Esse teste
-está **pré-registrado** antes da execução — ver [Programa de pesquisa](#programa-de-pesquisa).
+de informações obsoletas sob um orçamento de contexto controlado. A primeira
+demonstração formal terminou em **empate 0×0** — a hipótese permanece não
+demonstrada; ver [Programa de pesquisa](#programa-de-pesquisa) e o
+[dossiê da ablação](docs/research/registro/2026-10-19-ablacao-obsolescencia.md).
 
 ## Programa de pesquisa
 
@@ -25,10 +27,22 @@ O projeto segue um protocolo experimental formal (`docs/research/`):
 - [`registro/`](docs/research/registro/) — dossiês pós-execução com protocolo
   executado, tabelas brutas e limitações.
 
-Experimento em andamento: **ablação da hipótese central**
-(`run_obsolescence_benchmark.py`) — estado versionado do evo-memory vs.
-baseline de histórico completo, histórias idênticas nos dois braços,
-critérios de decisão congelados no pré-registro.
+Experimentos executados:
+
+- **Ablação da hipótese central** (`run_obsolescence_benchmark.py`,
+  pré-registro `prereg/2026-10-19-ablacao-obsolescencia.md`, dossiê
+  [`registro/2026-10-19-ablacao-obsolescencia.md`](docs/research/registro/2026-10-19-ablacao-obsolescencia.md)):
+  evo-memory vs. baseline de histórico completo, histórias idênticas nos dois
+  braços, 30 consultas por braço. Respostas obsoletas **0/30 × 0/30** —
+  empate pelo critério pré-registrado: **hipótese não demonstrada**.
+  Achados exploratórios: latência 29,6 s/consulta (evo) vs. 1,6 s (baseline);
+  cenário de 7 turnos está longe do regime de contexto em que a hipótese
+  separaria os braços; único caso discriminante (`instrumento-musical`)
+  só produz respostas "ambíguas" que explicam a transição. Próximo
+  pré-registro atacará histórico longo (30–50 turnos) e medirá custo formal.
+- Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
+  negativos determinísticos: ver
+  [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
 
 ## Funcionamento
 
