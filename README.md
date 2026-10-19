@@ -110,11 +110,34 @@ Configuração (`memory.retrieval`):
 | `attention-rerank-weight` | `RETRIEVAL_ATTENTION_WEIGHT` | `0.0` | mistura final `(1 − peso)·cru + peso·ŷ`; 0 desativa |
 | `attention-rerank-ridge` | `RETRIEVAL_ATTENTION_RIDGE` | `0.1` | ridge λ do `OlsRerank` |
 
-Status honesto: **desligado por padrão e ainda não medido contra os
-benchmarks HTTP**. O experimento planejado é repetir a rodada R@5 com
-`RETRIEVAL_ATTENTION_WEIGHT=1` e confrontar o caso `profissao-por-situacao`
-(distratores de natação e filhos no top-5). Falha na leitura dos vetores
-degrada para os scores crus, sem interromper a resposta.
+Status medido (A/B na mesma máquina e mesma manhã de 19 de outubro):
+
+| Experimento | peso = 0 (legado) | peso = 1 (atenção OLS) |
+|---|---|---|
+| Recuperação R@5, `retrieval_v2.json` | 5/6 | 5/6 (mesmo caso falho) |
+| Recuperação — calibração | 5/5 | 5/5 |
+| Recuperação — held-out | 6/6 | 6/6 |
+
+O mecanismo executa sem erro e sem regressão, mas **não separa o caso aberto**.
+Diagnóstico com vetores reais (bge-m3, 1024 dimensões, lidos do Postgres; a
+pergunta embutida pela mesma API usada pelo servidor): para "Como explico a
+Revolução Francesa para adolescentes?", a memória correta tem similaridade
+0,4127 e os distratores 0,4267 (romance), 0,4003 (nadar) e 0,3889 (filhos) —
+tudo dentro de ±0,04, e o Gram entre memórias é densamente correlato (cosseno
+médio de linha ≈ 0,6; nenhuma evidência é isolada). A varredura do ridge de λ =
+0,05 a 3,0 nunca abre o espaço entre correta e distratores: o `H_λ` encolhe
+todos os scores proporcionalmente e, com λ grande, "filhos" ultrapassa a
+correta. O teste unitário com distrator ortogonal não representa a geometria
+real do modelo de embeddings.
+
+Conclusão honesta: o defeito não é de *ranking* (a memória correta já vem entre
+as duas primeiras), e sim de *decisão de corte* — o limiar absoluto de
+similaridade admite fatos não relacionados porque os embeddings os colocam a
+±0,04 da resposta certa. Direções candidatas para o caso: calibração do limiar
+por conjunto (risco de fragilidade), re-ranking supervisionado pelo modelo
+juiz (custo por consulta) e filtros de composição/validade (rotinas correntes
+vs. conteúdo da pergunta). O re-ranking permanece **desligado por padrão**, com
+falha na leitura dos vetores degradando para os scores crus.
 
 ## Resultados preliminares
 
