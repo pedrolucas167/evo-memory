@@ -1,7 +1,9 @@
 package com.polon.evomemory.infrastructure.persistence;
 import com.polon.evomemory.domain.memory.MemoryStatus;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,41 @@ public class PgMemoryVectorAdapter implements com.polon.evomemory.application.po
         return "[" + java.util.stream.IntStream.range(0, vector.length)
                 .mapToObj(i -> Float.toString(vector[i]))
                 .collect(Collectors.joining(",")) + "]";
+    }
+
+    @Override
+    public Map<UUID, float[]> vectors(List<UUID> memoryIds) {
+        if (memoryIds.isEmpty()) {
+            return Map.of();
+        }
+        String placeholders = memoryIds.stream()
+                .map(id -> "?")
+                .collect(Collectors.joining(", "));
+        Object[] ids = memoryIds.toArray();
+        return jdbc.query("""
+                        select id, embedding::text as embedding_text
+                        from semantic_memory
+                        where id in (%s) and embedding is not null""".formatted(placeholders),
+                rs -> {
+                    Map<UUID, float[]> result = new HashMap<>();
+                    while (rs.next()) {
+                        result.put(rs.getObject("id", UUID.class), parseLiteral(rs.getString("embedding_text")));
+                    }
+                    return result;
+                }, ids);
+    }
+
+    static float[] parseLiteral(String literal) {
+        String inner = literal.substring(1, literal.length() - 1);
+        if (inner.isBlank()) {
+            return new float[0];
+        }
+        String[] parts = inner.split(",");
+        float[] vector = new float[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            vector[i] = Float.parseFloat(parts[i].trim());
+        }
+        return vector;
     }
 
 }

@@ -49,15 +49,16 @@ Onde cada peça vive no código:
 | `domain/memory/MemoryEvolution.java` | sobrecarga `evolve(..., attention)`: a leitura de atenção (limitada a [0, 1]) escala a taxa de reforço da confirmação de 0,1 para 0,1 + 0,1·Atenção; sem atenção, comportamento legado |
 | `application/memory/MemoryService.java` | em observações de confirmação, `attentionReading` calcula `ŷ = Σᵢ wᵢ·yᵢ` com similaridades do `VectorStorePort.nearest` (pesos) e confianças das memórias ativas do usuário (valores); falha do índice devolve 0 |
 | `application/MemoryEvolutionService.java` | ponte da aplicação para o domínio |
+| `domain/memory/OlsRerank.java` | re-classificação de recuperação pela vista de atenção em forma dual, `ŷ = K(K + λI)⁻¹·y` com Gram cósseo das evidências; Java puro, inversão por Cholesky |
+| `application/ports/VectorStorePort.java` + `infrastructure/persistence/PgMemoryVectorAdapter.java` | agora expõem também os vetores brutos `X` por id (`vectors`), que alimentam o re-ranking |
 
-Desvios honestos do paper, documentados para experimentação futura: a porta
-vetorial atual expõe apenas similaridades, então `MemoryService` usa o kernel
-de cosseno como aproximação de `⟨F_j, F_i⟩`; a codificação espectral completa
-(`OlsAttention`) está pronta e testada para quando houver acesso aos vetores
-brutos `X`. O piso de ridge regulariza o `X'X` singular de poucas evidências,
-o que diverge do OLS exato do paper. A influência observável está limitada: a
-atenção só muda a taxa de reforço de confirmações (0,1 a 0,2 por evidência) e
-nunca altera conteúdo nem classificação do juiz.
+Desvios honestos do paper, documentados para experimentação futura: o piso de
+ridge regulariza matrizes singulares de poucas evidências, o que diverge do OLS
+exato do paper. A leitura do mecanismo na evolução usa o cosseno como
+aproximação de `⟨F_j, F_i⟩`. A influência observável é limitada por design: a
+atenção só muda a taxa de reforço de confirmações (0,1 a 0,2 por evidência) e o
+score de recuperação quando o peso do re-ranking está ligado — nunca altera
+conteúdo nem classificação do juiz.
 
 Verificação offline (benchmark determinístico, `OlsAttentionBenchmarkTest`,
 executado no `mvn test` do CI, semente fixa):
@@ -83,6 +84,60 @@ padrões: não discrimina. A leitura separa corroboração real (até duas vezes
 taxa legada) e mantém o ruído perto da taxa conservadora, mas isso é verificação
 da regra de domínio em sintético: não mede comportamento com extração e juiz
 reais, nem substitui os benchmarks HTTP.
+
+## Re-ranking espectral na recuperação
+
+A rodada de benchmarks de 19 de outubro mostrou o único caso aberto de
+recuperação: distratores fracos (natação e filhos) entram no top-5 junto da
+memória correta porque cruzam o limiar de similaridade, mesmo sem vizinhança
+semântica. O re-ranking ataca exatamente isso pela vista de atenção do paper,
+em forma dual para N evidências — sem softmax, com g = identidade:
+
+```
+ŷ = K (K + λI)⁻¹ · y        com K[i][j] = cosseno(vᵢ, vⱼ) e y = similaridades cruas
+```
+
+Cada score cru é re-classificado pela atenção `H_λ = K(K + λI)⁻¹`: evidências
+correlatas entre si compartilham relevância (engrossam a vizinhança umas das
+outras) e distratores isolados — sem apoio no Gram — encolhem em direção à
+média da vizinhança. O `λ` (ridge) garante a inversão e controla quanto do
+score original sobrevive: com λ → 0 e Gram de ranking completo, `ŷ ≈ y`.
+
+Configuração (`memory.retrieval`):
+
+| Propriedade | Variável de ambiente | Padrão | Papel |
+|---|---|---|---|
+| `attention-rerank-weight` | `RETRIEVAL_ATTENTION_WEIGHT` | `0.0` | mistura final `(1 − peso)·cru + peso·ŷ`; 0 desativa |
+| `attention-rerank-ridge` | `RETRIEVAL_ATTENTION_RIDGE` | `0.1` | ridge λ do `OlsRerank` |
+
+Status medido (A/B na mesma máquina e mesma manhã de 19 de outubro):
+
+| Experimento | peso = 0 (legado) | peso = 1 (atenção OLS) |
+|---|---|---|
+| Recuperação R@5, `retrieval_v2.json` | 5/6 | 5/6 (mesmo caso falho) |
+| Recuperação — calibração | 5/5 | 5/5 |
+| Recuperação — held-out | 6/6 | 6/6 |
+
+O mecanismo executa sem erro e sem regressão, mas **não separa o caso aberto**.
+Diagnóstico com vetores reais (bge-m3, 1024 dimensões, lidos do Postgres; a
+pergunta embutida pela mesma API usada pelo servidor): para "Como explico a
+Revolução Francesa para adolescentes?", a memória correta tem similaridade
+0,4127 e os distratores 0,4267 (romance), 0,4003 (nadar) e 0,3889 (filhos) —
+tudo dentro de ±0,04, e o Gram entre memórias é densamente correlato (cosseno
+médio de linha ≈ 0,6; nenhuma evidência é isolada). A varredura do ridge de λ =
+0,05 a 3,0 nunca abre o espaço entre correta e distratores: o `H_λ` encolhe
+todos os scores proporcionalmente e, com λ grande, "filhos" ultrapassa a
+correta. O teste unitário com distrator ortogonal não representa a geometria
+real do modelo de embeddings.
+
+Conclusão honesta: o defeito não é de *ranking* (a memória correta já vem entre
+as duas primeiras), e sim de *decisão de corte* — o limiar absoluto de
+similaridade admite fatos não relacionados porque os embeddings os colocam a
+±0,04 da resposta certa. Direções candidatas para o caso: calibração do limiar
+por conjunto (risco de fragilidade), re-ranking supervisionado pelo modelo
+juiz (custo por consulta) e filtros de composição/validade (rotinas correntes
+vs. conteúdo da pergunta). O re-ranking permanece **desligado por padrão**, com
+falha na leitura dos vetores degradando para os scores crus.
 
 ## Resultados preliminares
 
