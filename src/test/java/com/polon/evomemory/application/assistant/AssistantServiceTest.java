@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -51,6 +53,10 @@ class AssistantServiceTest {
     private final AtomicReference<LlmRequest> captured = new AtomicReference<>();
 
     private AssistantService assistant(EmbeddingClient embeddings) {
+        return assistant(embeddings, new RetrievalProperties());
+    }
+
+    private AssistantService assistant(EmbeddingClient embeddings, RetrievalProperties retrievalProperties) {
         LlmProperties properties = new LlmProperties();
         properties.setChatModel("chat-model");
         LlmPort client = request -> {
@@ -58,7 +64,7 @@ class AssistantServiceTest {
             return "resposta";
         };
         return new AssistantService(memoryService, conversationService, client, properties,
-                embeddings, vectorStore, new RetrievalProperties(), FIXED_CLOCK);
+                embeddings, vectorStore, retrievalProperties, FIXED_CLOCK);
     }
 
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC);
@@ -272,8 +278,7 @@ class AssistantServiceTest {
     }
 
     @Test
-    void learnsFromMessageBeforeAnswering() {
-        when(conversationService.process(eq("user"), eq("conv"), any()))
+    void learnsFromMessageBeforeAnswering() {        when(conversationService.process(eq("user"), eq("conv"), any()))
                 .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
         when(memoryService.recallActive(anyString())).thenReturn(List.of());
 
@@ -291,5 +296,82 @@ class AssistantServiceTest {
         assistant(embeddingsUnavailable()).chat("user", "conv", "Oi");
 
         assertThat(captured.get().userPrompt()).contains("nada registrado ainda");
+    }
+
+    @Test
+    void attentionRerankPushesIsolatedDistractorOutOfContext() {
+        // Três evidências mutuamente correlatas (cosseno 0,6 entre si) e um distrator
+        // ortogonal aos três. Cru: distrator 0,54 fica dentro da margem relativa
+        // (corte 0,54). Com a atenção OLS (peso 1), o cluster ganha apoio mútuo e o
+        // distrator, sem vizinhança no Gram, cai para 0,54/1,1 = 0,49 — fora do corte.
+        Memory distributed = memory(MemoryKind.INTEREST, "sistemas-distribuidos",
+                "Está estudando sistemas distribuídos.");
+        Memory parallel = memory(MemoryKind.INTEREST, "sistemas-paralelos",
+                "Quer dominar sistemas paralelos na universidade.");
+        Memory book = memory(MemoryKind.INTEREST, "livro-distribuidos",
+                "Está lendo um livro de computação distribuída.");
+        Memory kids = memory(MemoryKind.FACT, "filhos", "Tem dois filhos pequenos.");
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of(distributed, parallel, book, kids));
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of(
+                new VectorStorePort.Match(distributed.getId(), 0.62),
+                new VectorStorePort.Match(parallel.getId(), 0.62),
+                new VectorStorePort.Match(book.getId(), 0.62),
+                new VectorStorePort.Match(kids.getId(), 0.54)));
+        when(vectorStore.vectors(any())).thenReturn(Map.of(
+                distributed.getId(), new float[] {1f, 0f, 0f, 0f},
+                parallel.getId(), new float[] {0.6f, 0.8f, 0f, 0f},
+                book.getId(), new float[] {0.6f, 0.3f, 0.7416f, 0f},
+                kids.getId(), new float[] {0f, 0f, 0f, 1f}));
+
+        RetrievalProperties withAttention = new RetrievalProperties();
+        withAttention.setAttentionRerankWeight(1.0);
+        withAttention.setAttentionRerankRidge(0.1);
+        assistant(text -> new float[] {0.1f}, withAttention)
+                .chat("user", "conv", "Quero entender replicação de dados entre servidores.");
+
+        String prompt = captured.get().userPrompt();
+        assertThat(prompt).contains("Está estudando sistemas distribuídos.");
+        assertThat(prompt).contains("sistemas paralelos");
+        assertThat(prompt).contains("computação distribuída");
+        assertThat(prompt).doesNotContain("Tem dois filhos pequenos.");
+    }
+
+    @Test
+    void missingVectorsDegenerateToRawScores() {
+        Memory distributed = memory(MemoryKind.INTEREST, "sistemas-distribuidos",
+                "Está estudando sistemas distribuídos.");
+        Memory parallel = memory(MemoryKind.INTEREST, "sistemas-paralelos",
+                "Quer dominar sistemas paralelos na universidade.");
+        Memory kids = memory(MemoryKind.FACT, "filhos", "Tem dois filhos pequenos.");
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of(distributed, parallel, kids));
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of(
+                new VectorStorePort.Match(distributed.getId(), 0.62),
+                new VectorStorePort.Match(parallel.getId(), 0.62),
+                new VectorStorePort.Match(kids.getId(), 0.54)));
+        when(vectorStore.vectors(any())).thenReturn(Map.of());
+
+        RetrievalProperties withAttention = new RetrievalProperties();
+        withAttention.setAttentionRerankWeight(1.0);
+        assistant(text -> new float[] {0.1f}, withAttention)
+                .chat("user", "conv", "Quero entender replicação de dados entre servidores.");
+
+        // Score cru preserva o comportamento histórico: o distrator entra pela margem.
+        assertThat(captured.get().userPrompt()).contains("Tem dois filhos pequenos.");
+    }
+
+    @Test
+    void doesNotFetchVectorsWhenRerankIsDisabled() {
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of());
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of());
+
+        assistant(text -> new float[] {0.1f}).chat("user", "conv", "Quero entender replicação de dados.");
+
+        verify(vectorStore, never()).vectors(any());
     }
 }

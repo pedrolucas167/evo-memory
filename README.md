@@ -49,15 +49,16 @@ Onde cada peça vive no código:
 | `domain/memory/MemoryEvolution.java` | sobrecarga `evolve(..., attention)`: a leitura de atenção (limitada a [0, 1]) escala a taxa de reforço da confirmação de 0,1 para 0,1 + 0,1·Atenção; sem atenção, comportamento legado |
 | `application/memory/MemoryService.java` | em observações de confirmação, `attentionReading` calcula `ŷ = Σᵢ wᵢ·yᵢ` com similaridades do `VectorStorePort.nearest` (pesos) e confianças das memórias ativas do usuário (valores); falha do índice devolve 0 |
 | `application/MemoryEvolutionService.java` | ponte da aplicação para o domínio |
+| `domain/memory/OlsRerank.java` | re-classificação de recuperação pela vista de atenção em forma dual, `ŷ = K(K + λI)⁻¹·y` com Gram cósseo das evidências; Java puro, inversão por Cholesky |
+| `application/ports/VectorStorePort.java` + `infrastructure/persistence/PgMemoryVectorAdapter.java` | agora expõem também os vetores brutos `X` por id (`vectors`), que alimentam o re-ranking |
 
-Desvios honestos do paper, documentados para experimentação futura: a porta
-vetorial atual expõe apenas similaridades, então `MemoryService` usa o kernel
-de cosseno como aproximação de `⟨F_j, F_i⟩`; a codificação espectral completa
-(`OlsAttention`) está pronta e testada para quando houver acesso aos vetores
-brutos `X`. O piso de ridge regulariza o `X'X` singular de poucas evidências,
-o que diverge do OLS exato do paper. A influência observável está limitada: a
-atenção só muda a taxa de reforço de confirmações (0,1 a 0,2 por evidência) e
-nunca altera conteúdo nem classificação do juiz.
+Desvios honestos do paper, documentados para experimentação futura: o piso de
+ridge regulariza matrizes singulares de poucas evidências, o que diverge do OLS
+exato do paper. A leitura do mecanismo na evolução usa o cosseno como
+aproximação de `⟨F_j, F_i⟩`. A influência observável é limitada por design: a
+atenção só muda a taxa de reforço de confirmações (0,1 a 0,2 por evidência) e o
+score de recuperação quando o peso do re-ranking está ligado — nunca altera
+conteúdo nem classificação do juiz.
 
 Verificação offline (benchmark determinístico, `OlsAttentionBenchmarkTest`,
 executado no `mvn test` do CI, semente fixa):
@@ -83,6 +84,37 @@ padrões: não discrimina. A leitura separa corroboração real (até duas vezes
 taxa legada) e mantém o ruído perto da taxa conservadora, mas isso é verificação
 da regra de domínio em sintético: não mede comportamento com extração e juiz
 reais, nem substitui os benchmarks HTTP.
+
+## Re-ranking espectral na recuperação
+
+A rodada de benchmarks de 19 de outubro mostrou o único caso aberto de
+recuperação: distratores fracos (natação e filhos) entram no top-5 junto da
+memória correta porque cruzam o limiar de similaridade, mesmo sem vizinhança
+semântica. O re-ranking ataca exatamente isso pela vista de atenção do paper,
+em forma dual para N evidências — sem softmax, com g = identidade:
+
+```
+ŷ = K (K + λI)⁻¹ · y        com K[i][j] = cosseno(vᵢ, vⱼ) e y = similaridades cruas
+```
+
+Cada score cru é re-classificado pela atenção `H_λ = K(K + λI)⁻¹`: evidências
+correlatas entre si compartilham relevância (engrossam a vizinhança umas das
+outras) e distratores isolados — sem apoio no Gram — encolhem em direção à
+média da vizinhança. O `λ` (ridge) garante a inversão e controla quanto do
+score original sobrevive: com λ → 0 e Gram de ranking completo, `ŷ ≈ y`.
+
+Configuração (`memory.retrieval`):
+
+| Propriedade | Variável de ambiente | Padrão | Papel |
+|---|---|---|---|
+| `attention-rerank-weight` | `RETRIEVAL_ATTENTION_WEIGHT` | `0.0` | mistura final `(1 − peso)·cru + peso·ŷ`; 0 desativa |
+| `attention-rerank-ridge` | `RETRIEVAL_ATTENTION_RIDGE` | `0.1` | ridge λ do `OlsRerank` |
+
+Status honesto: **desligado por padrão e ainda não medido contra os
+benchmarks HTTP**. O experimento planejado é repetir a rodada R@5 com
+`RETRIEVAL_ATTENTION_WEIGHT=1` e confrontar o caso `profissao-por-situacao`
+(distratores de natação e filhos no top-5). Falha na leitura dos vetores
+degrada para os scores crus, sem interromper a resposta.
 
 ## Resultados preliminares
 

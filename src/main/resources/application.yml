@@ -30,3 +30,5 @@ memory:
     min-similarity: ${RETRIEVAL_MIN_SIMILARITY:0.38}
     relative-margin: ${RETRIEVAL_RELATIVE_MARGIN:0.05}
     top-k: ${RETRIEVAL_TOP_K:10}
+    attention-rerank-weight: ${RETRIEVAL_ATTENTION_WEIGHT:0.0}
+    attention-rerank-ridge: ${RETRIEVAL_ATTENTION_RIDGE:0.1}

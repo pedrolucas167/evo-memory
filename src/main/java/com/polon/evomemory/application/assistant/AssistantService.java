@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +26,7 @@ import com.polon.evomemory.application.ports.LlmPort;
 import com.polon.evomemory.application.ports.LlmRequest;
 import com.polon.evomemory.application.ports.ConversationPort;
 import com.polon.evomemory.domain.memory.MemoryKind;
+import com.polon.evomemory.domain.memory.OlsRerank;
 import com.polon.evomemory.application.ports.MemoryRecallPort;
 import com.polon.evomemory.application.ports.VectorStorePort;
 import com.polon.evomemory.domain.memory.Memory;
@@ -138,6 +140,7 @@ public class AssistantService {
             if (matches.isEmpty()) {
                 return Map.of();
             }
+            matches = attenuateByAttention(matches);
             double best = matches.get(0).similarity();
             return matches.stream()
                     .filter(match -> match.similarity() >= retrieval.getMinSimilarity())
@@ -147,6 +150,62 @@ public class AssistantService {
             log.warn("Busca semantica indisponivel, usando apenas palavras");
             return Map.of();
         }
+    }
+
+    /**
+     * Re-classifica os matches pela atenção OLS quando configurado (peso > 0):
+     * candidatos com vizinhança forte no Gram ganham relevância compartilhada e
+     * distratores isolados encolhem. Manutenção da ordem de {@code nearest};
+     * falha na leitura dos vetores degrada para os scores crus.
+     */
+    private List<VectorStorePort.Match> attenuateByAttention(List<VectorStorePort.Match> matches) {
+        double weight = Math.min(1.0, Math.max(0.0, retrieval.getAttentionRerankWeight()));
+        if (weight <= 0 || matches.size() < 2) {
+            return matches;
+        }
+        try {
+            Map<UUID, float[]> vectors = vectorStore.vectors(
+                    matches.stream().map(VectorStorePort.Match::memoryId).toList());
+            int n = matches.size();
+            if (vectors.size() < n) {
+                log.warn("Re-ranking OLS ignorado: vetores ausentes para as evidências");
+                return matches;
+            }
+            double[] raw = new double[n];
+            double[][] gram = new double[n][n];
+            for (int i = 0; i < n; i++) {
+                raw[i] = matches.get(i).similarity();
+                for (int j = 0; j < n; j++) {
+                    gram[i][j] = i == j ? 1.0 : cosine(vectors.get(matches.get(i).memoryId()),
+                            vectors.get(matches.get(j).memoryId()));
+                }
+            }
+            double[] fitted = OlsRerank.rerank(raw, gram, retrieval.getAttentionRerankRidge());
+            List<VectorStorePort.Match> reRanked = new ArrayList<>(n);
+            for (int i = 0; i < n; i++) {
+                double blended = (1 - weight) * raw[i] + weight * fitted[i];
+                reRanked.add(new VectorStorePort.Match(matches.get(i).memoryId(), blended));
+            }
+            return reRanked;
+        } catch (RuntimeException error) {
+            log.warn("Re-ranking OLS indisponivel, mantendo scores crus");
+            return matches;
+        }
+    }
+
+    private static double cosine(float[] a, float[] b) {
+        double dotProduct = 0.0;
+        double normA = 0.0;
+        double normB = 0.0;
+        for (int i = 0; i < a.length; i++) {
+            dotProduct += a[i] * b[i];
+            normA += (double) a[i] * a[i];
+            normB += (double) b[i] * b[i];
+        }
+        if (normA == 0 || normB == 0) {
+            return 0.0;
+        }
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
     static boolean isStalePlan(Memory memory, LocalDate today) {
