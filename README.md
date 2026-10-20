@@ -7,10 +7,11 @@ ou se contradiz ao longo das conversas.
 O sistema registra experiências como **memória episódica**, extrai delas um
 estado de **memória semântica** e preserva as revisões desse estado. A hipótese
 de pesquisa é que atualizações explícitas e versionamento possam reduzir o uso
-de informações obsoletas sob um orçamento de contexto controlado. A primeira
-demonstração formal terminou em **empate 0×0** — a hipótese permanece não
-demonstrada; ver [Programa de pesquisa](#programa-de-pesquisa) e o
-[dossiê da ablação](docs/research/registro/2026-10-19-ablacao-obsolescencia.md).
+de informações obsoletas sob um orçamento de contexto controlado. Duas
+demonstrações formais pré-registradas terminaram em **empate 0×0** — a
+hipótese permanece não demonstrada e a operacionalização atual está
+encerrada; ver [Programa de pesquisa](#programa-de-pesquisa) e o
+[dossiê v2](docs/research/registro/2026-10-20-ablacao-obsolescencia-v2.md).
 
 ## Programa de pesquisa
 
@@ -40,6 +41,19 @@ Experimentos executados:
   separaria os braços; único caso discriminante (`instrumento-musical`)
   só produz respostas "ambíguas" que explicam a transição. Próximo
   pré-registro atacará histórico longo (30–50 turnos) e medirá custo formal.
+- **Ablação v2 — regime de orçamento** (`run_obsolescence_v2.py`, pré-registro
+  `prereg/2026-10-19-ablacao-obsolescencia-v2.md`, dossiê
+  [`registro/2026-10-20-ablacao-obsolescencia-v2.md`](docs/research/registro/2026-10-20-ablacao-obsolescencia-v2.md)):
+  30 turnos, dupla correção encadeada A→B→C, consulta neutra de estado.
+  Respostas obsoletas **0/30 × 0/30 de novo** — segundo empate consecutivo,
+  **operacionalização encerrada por pré-registro: a hipótese central segue
+  não demonstrada**. Achados exploratórios com valor de engenharia:
+  (1) custo real ~18× (117 s/caso e 62 chamadas estimadas vs. 2,35 s e 1
+  chamada); (2) ambiguidade de resposta tem correlação perfeita com resíduo
+  no grafo; (3) o diagnóstico revelou **chaves de assunto paralelas sob
+  troca de entidade nomeada** ("Mel/Tobi/Nina" viram assuntos distintos e a
+  cadeia de contradição nunca encadeia) — defeito mapeado, candidato ao
+  próximo alvo de engenharia.
 - Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
