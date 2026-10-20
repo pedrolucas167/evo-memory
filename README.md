@@ -7,10 +7,11 @@ ou se contradiz ao longo das conversas.
 O sistema registra experiências como **memória episódica**, extrai delas um
 estado de **memória semântica** e preserva as revisões desse estado. A hipótese
 de pesquisa é que atualizações explícitas e versionamento possam reduzir o uso
-de informações obsoletas sob um orçamento de contexto controlado. A primeira
-demonstração formal terminou em **empate 0×0** — a hipótese permanece não
-demonstrada; ver [Programa de pesquisa](#programa-de-pesquisa) e o
-[dossiê da ablação](docs/research/registro/2026-10-19-ablacao-obsolescencia.md).
+de informações obsoletas sob um orçamento de contexto controlado. Duas
+demonstrações formais pré-registradas terminaram em **empate 0×0** — a
+hipótese permanece não demonstrada e a operacionalização atual está
+encerrada; ver [Programa de pesquisa](#programa-de-pesquisa) e o
+[dossiê v2](docs/research/registro/2026-10-20-ablacao-obsolescencia-v2.md).
 
 ## Programa de pesquisa
 
@@ -40,9 +41,40 @@ Experimentos executados:
   separaria os braços; único caso discriminante (`instrumento-musical`)
   só produz respostas "ambíguas" que explicam a transição. Próximo
   pré-registro atacará histórico longo (30–50 turnos) e medirá custo formal.
+- **Ablação v2 — regime de orçamento** (`run_obsolescence_v2.py`, pré-registro
+  `prereg/2026-10-19-ablacao-obsolescencia-v2.md`, dossiê
+  [`registro/2026-10-20-ablacao-obsolescencia-v2.md`](docs/research/registro/2026-10-20-ablacao-obsolescencia-v2.md)):
+  30 turnos, dupla correção encadeada A→B→C, consulta neutra de estado.
+  Respostas obsoletas **0/30 × 0/30 de novo** — segundo empate consecutivo,
+  **operacionalização encerrada por pré-registro: a hipótese central segue
+  não demonstrada**. Achados exploratórios com valor de engenharia:
+  (1) custo real ~18× (117 s/caso e 62 chamadas estimadas vs. 2,35 s e 1
+  chamada); (2) ambiguidade de resposta tem correlação perfeita com resíduo
+  no grafo; (3) o diagnóstico revelou **chaves de assunto paralelas sob
+  troca de entidade nomeada** ("Mel/Tobi/Nina" viram assuntos distintos e a
+  cadeia de contradição nunca encadeia) — defeito mapeado, candidato ao
+  próximo alvo de engenharia.
 - Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
+
+Ideias candidatas (aguardando pré-registro próprio):
+
+- **Trajetória de usuário em 10 anos (memória episódica de excelência)** —
+  ideia do proprietário do projeto. Uma IA que acompanha a vida do usuário
+  de forma precisa por uma década: por exemplo, um usuário que começa a usar
+  a IA aos 17 anos e, 10 anos depois, pergunta sobre um evento específico —
+  e a IA recupera o episódio com precisão. Isso é a fronteira natural da
+  pesquisa atual ("como a IA faz parte da história do usuário e recupera
+  informação quando questionada"): o benchmark temporal de hoje semeia tudo
+  no mesmo segundo (sinal temporal neutro, registrado nos dossiês), e esta
+  ideia pede a coordenada que falta — **tempo real sintético** (carimbos de
+  10 anos, eventos datados, mudanças de fase de vida). Desafios técnicos
+  mapeáveis antes do primeiro experimento: semeadura com carimbos de época,
+  consultas aninhadas ao tempo ("o que aconteceu no inverno do segundo ano
+  de trabalho?") e consolidação de episódios antigos sem perda. Na
+  hora certa, o desafio de custo (consultas de carreira inteira) entra como
+  métrica de protocolo igual às demais.
 
 ## Funcionamento
 

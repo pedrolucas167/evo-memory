@@ -1,0 +1,76 @@
+{
+  "description": "Preregistered ablation v2: three-state personal facts (A->B->C) across 30 neutral filler turns; neutral state queries without recency cues. Same raw story to both arms. Markers are accentless fragments safe to plural/singular forms; intermediate and old markers must not be substrings of expected or of each other.",
+  "fillers": [
+    "Hoje o dia foi corrido.",
+    "Almoco foi rapido, arroz e feijao.",
+    "Vou dormir cedo hoje.",
+    "Amanha termina o prazo de um projeto.",
+    "Peguei transito na volta pra casa.",
+    "Organizei a agenda da semana.",
+    "Fiz compras e passei no mercado.",
+    "Liguei pro meu pai para falar de bola.",
+    "Terminei uma serie de dez episodios."
+  ],
+  "cases": [
+    {
+      "id": "cidade-abc",
+      "initial": "Moro em Curitiba.",
+      "change1": "Mudei de cidade: agora moro em Porto Alegre, nao em Curitiba.",
+      "change2": "Mudei de novo: de Porto Alegre para Florianopolis agora.",
+      "question": "Onde eu moro?",
+      "expected": "florianopolis",
+      "intermediate": "porto alegre",
+      "old": "curitiba"
+    },
+    {
+      "id": "cafe-abc",
+      "initial": "Prefiro cafe sem acucar.",
+      "change1": "Mudei a preferencia: agora tomo cafe com leite, nao sem acucar.",
+      "change2": "Mudei de novo: de cafe com leite para cafe sem leite e com acucar.",
+      "question": "Como eu tomo meu cafe?",
+      "expected": "com acucar",
+      "intermediate": "com leite",
+      "old": "sem acucar"
+    },
+    {
+      "id": "futebol-abc",
+      "initial": "Jogo futebol aos sabados.",
+      "change1": "Mudei meu jogo: agora jogo aos domingos, nao mais aos sabados.",
+      "change2": "Mudei de novo: de domingo para quarta-feira agora.",
+      "question": "Em que dia eu jogo futebol?",
+      "expected": "quarta",
+      "intermediate": "domingo",
+      "old": "sabado"
+    },
+    {
+      "id": "gato-abc",
+      "initial": "Tenho uma gata chamada Mel.",
+      "change1": "A Mel morreu e adotei um gato chamado Tobi.",
+      "change2": "O Tobi fugiu; adotei uma gata chamada Nina para substituir ele.",
+      "question": "Qual o nome do meu gato?",
+      "expected": "nina",
+      "intermediate": "tobi",
+      "old": "mel"
+    },
+    {
+      "id": "cargo-abc",
+      "initial": "Trabalho como analista de dados.",
+      "change1": "Fui promovida: agora sou engenheira de dados, e nao mais analista.",
+      "change2": "Fui promovida de novo: de engenheira de dados para engenheira de produto.",
+      "question": "Qual meu cargo?",
+      "expected": "engenheira de produto",
+      "intermediate": "engenheira de dados",
+      "old": "analista"
+    },
+    {
+      "id": "instrumento-abc",
+      "initial": "Toco violao ha um ano.",
+      "change1": "Deixei o violao de lado: comeco a tocar piano.",
+      "change2": "Deixei o piano de lado: comecei a tocar violino.",
+      "question": "Que instrumento eu toco?",
+      "expected": "violino",
+      "intermediate": "piano",
+      "old": "violao"
+    }
+  ]
+}
