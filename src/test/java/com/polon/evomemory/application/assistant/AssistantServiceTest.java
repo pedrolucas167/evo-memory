@@ -441,4 +441,75 @@ class AssistantServiceTest {
 
         verify(judgeReranker, never()).select(anyString(), any());
     }
+
+    @Test
+    void narrowModeCutsTheMarginalCandidateBeforeTheJudge() {
+        // Caso real do diagnóstico offline 21/10 (gato-abc): a linha de estado
+        // atual cai na margem relativa e o juiz nunca a vê.
+        Memory renamed = memory(MemoryKind.FACT, "gato-tobi", "Adotou um gato chamado Tobi, que fugiu.");
+        Memory current = memory(MemoryKind.FACT, "gata-nina",
+                "A gata Mel morreu, e adotou uma gata chamada Nina.");
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of(renamed, current));
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of(
+                new VectorStorePort.Match(renamed.getId(), 0.70),
+                new VectorStorePort.Match(current.getId(), 0.55)));
+
+        assistant(text -> new float[] {0.1f}).chat("user", "conv", "Onde mora o meu parente?");
+
+        assertThat(captured.get().userPrompt()).contains("Adotou um gato chamado Tobi");
+        assertThat(captured.get().userPrompt()).doesNotContain("Nina");
+        verify(judgeReranker, never()).select(anyString(), any());
+    }
+
+    @Test
+    void wideCandidatesHandTheMarginalMatchToTheJudge() {
+        Memory renamed = memory(MemoryKind.FACT, "gato-tobi", "Adotou um gato chamado Tobi, que fugiu.");
+        Memory current = memory(MemoryKind.FACT, "gata-nina",
+                "A gata Mel morreu, e adotou uma gata chamada Nina.");
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of(renamed, current));
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of(
+                new VectorStorePort.Match(renamed.getId(), 0.70),
+                new VectorStorePort.Match(current.getId(), 0.55)));
+        final var seenCandidates = new AtomicReference<Integer>();
+        when(judgeReranker.select(anyString(), any())).thenAnswer(invocation -> {
+            seenCandidates.set(((List<?>) invocation.getArgument(1)).size());
+            return java.util.Optional.of(List.of(renamed.getId(), current.getId()));
+        });
+
+        RetrievalProperties wide = new RetrievalProperties();
+        wide.setJudgeWideCandidates(true);
+        assistant(text -> new float[] {0.1f}, wide).chat("user", "conv", "Onde mora o meu parente?");
+
+        // A margem não corta a geração de candidatos: o juiz decide sobre as
+        // duas linhas do mesmo tópico, e o contexto final recebe o estado atual.
+        assertThat(seenCandidates.get()).isEqualTo(2);
+        assertThat(captured.get().userPrompt()).contains("Adotou um gato chamado Tobi");
+        assertThat(captured.get().userPrompt()).contains("A gata Mel morreu");
+    }
+
+    @Test
+    void wideCandidatesDegradeWithoutMarginAfterJudgeFailure() {
+        Memory renamed = memory(MemoryKind.FACT, "gato-tobi", "Adotou um gato chamado Tobi, que fugiu.");
+        Memory current = memory(MemoryKind.FACT, "gata-nina",
+                "A gata Mel morreu, e adotou uma gata chamada Nina.");
+        when(conversationService.process(eq("user"), eq("conv"), any()))
+                .thenReturn(new ChatResponse(UUID.randomUUID(), List.of()));
+        when(memoryService.recallActive("user")).thenReturn(List.of(renamed, current));
+        when(vectorStore.nearest(eq("user"), any(), anyInt())).thenReturn(List.of(
+                new VectorStorePort.Match(renamed.getId(), 0.70),
+                new VectorStorePort.Match(current.getId(), 0.55)));
+        when(judgeReranker.select(anyString(), any())).thenReturn(java.util.Optional.empty());
+
+        RetrievalProperties wide = new RetrievalProperties();
+        wide.setJudgeWideCandidates(true);
+        assistant(text -> new float[] {0.1f}, wide).chat("user", "conv", "Onde mora o meu parente?");
+
+        // Degradação honesta do modo largo: ordenação por score, sem margem.
+        assertThat(captured.get().userPrompt()).contains("Adotou um gato chamado Tobi");
+        assertThat(captured.get().userPrompt()).contains("A gata Mel morreu");
+    }
 }

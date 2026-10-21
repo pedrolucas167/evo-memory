@@ -117,7 +117,13 @@ public class AssistantService {
 
     private List<Memory> select(String userId, String message, List<Memory> active) {
         Set<UUID> eligible = active.stream().map(Memory::getId).collect(Collectors.toSet());
-        Map<UUID, Double> semantic = semanticMatches(userId, message, eligible);
+        // Candidatos largos para o juiz (frente A.2; diagnóstico offline 2026-10-21):
+        // com o juiz decidindo, a margem relativa não protege o contexto final —
+        // o filtro conservador do juiz protege — e só reduz cobertura, tendo
+        // eliminado o estado atual da disputa por 0,0014 de cosine. Padrão
+        // desligado: pré-registro decide a adoção.
+        boolean wideCandidates = retrieval.isJudgeRerank() && retrieval.isJudgeWideCandidates();
+        Map<UUID, Double> semantic = semanticMatches(userId, message, eligible, wideCandidates);
         Set<String> messageWords = words(message);
 
         List<Scored> ranked = active.stream()
@@ -167,7 +173,8 @@ public class AssistantService {
                 .toList();
     }
 
-    private Map<UUID, Double> semanticMatches(String userId, String message, Set<UUID> eligible) {
+    private Map<UUID, Double> semanticMatches(String userId, String message, Set<UUID> eligible,
+                                               boolean wideCandidates) {
         try {
             float[] query = embeddingClient.embed(message);
             List<VectorStorePort.Match> matches = vectorStore.nearest(userId, query, retrieval.getTopK()).stream()
@@ -180,7 +187,8 @@ public class AssistantService {
             double best = matches.get(0).similarity();
             return matches.stream()
                     .filter(match -> match.similarity() >= retrieval.getMinSimilarity())
-                    .filter(match -> match.similarity() >= best - retrieval.getRelativeMargin())
+                    .filter(match -> wideCandidates
+                            || match.similarity() >= best - retrieval.getRelativeMargin())
                     .collect(Collectors.toMap(VectorStorePort.Match::memoryId, VectorStorePort.Match::similarity));
         } catch (RuntimeException error) {
             log.warn("Busca semantica indisponivel, usando apenas palavras");

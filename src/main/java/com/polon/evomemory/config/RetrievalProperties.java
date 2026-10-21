@@ -25,6 +25,24 @@ public class RetrievalProperties {
     private boolean judgeRerank = true;
     /** Quantos candidatos, no máximo, o juiz avalia (a partir do topo da ordenação por score). */
     private int judgeRerankMaxCandidates = 16;
+    /**
+     * Geração de candidatos largos para o juiz (frente A.2): quando LIGADA, a
+     * margem relativa não corta a lista que vai ao juiz — o corte fica só no
+     * {@code minSimilarity}, e a proteção do contexto final passa a ser o
+     * filtro conservador do juiz (diagnóstico offline 21/10: a margem
+     * eliminava o estado atual por 0,0014 antes da disputa). Falha do juiz
+     * degrada para a ordenação por score. Padrão DESLIGADO: sem medição
+     * pré-registrada não vira comportamento padrão.
+     */
+    private boolean judgeWideCandidates = false;
+
+    public boolean isJudgeWideCandidates() {
+        return judgeWideCandidates;
+    }
+
+    public void setJudgeWideCandidates(boolean judgeWideCandidates) {
+        this.judgeWideCandidates = judgeWideCandidates;
+    }
 
     public double getMinSimilarity() {
         return minSimilarity;

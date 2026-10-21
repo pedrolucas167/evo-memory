@@ -34,3 +34,4 @@ memory:
     attention-rerank-ridge: ${RETRIEVAL_ATTENTION_RIDGE:0.1}
     judge-rerank: ${RETRIEVAL_JUDGE_RERANK:true}
     judge-rerank-max-candidates: ${RETRIEVAL_JUDGE_MAX_CANDIDATES:16}
+    judge-wide-candidates: ${RETRIEVAL_JUDGE_WIDE_CANDIDATES:false}
