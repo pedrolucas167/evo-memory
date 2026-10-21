@@ -52,8 +52,12 @@ Experimentos executados:
   chamada); (2) ambiguidade de resposta tem correlação perfeita com resíduo
   no grafo; (3) o diagnóstico revelou **chaves de assunto paralelas sob
   troca de entidade nomeada** ("Mel/Tobi/Nina" viram assuntos distintos e a
-  cadeia de contradição nunca encadeia) — defeito mapeado, candidato ao
-  próximo alvo de engenharia.
+  cadeia de contradição nunca encadeia) — defeito mapeado e **corrigido em
+  2026-10-21** com resolução de alias determinística (verificação viva em
+  [`registro/2026-10-21-verificacao-fix-alias.md`](docs/research/registro/2026-10-21-verificacao-fix-alias.md):
+  o encadeamento funciona de ponta a ponta, mas a resposta de estado ainda
+  erra porque o recall escolhe a linha antiga — novo defeito mapeado,
+  candidato a pré-registro).
 - Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
@@ -75,6 +79,14 @@ Ideias candidatas (aguardando pré-registro próprio):
   de trabalho?") e consolidação de episódios antigos sem perda. Na
   hora certa, o desafio de custo (consultas de carreira inteira) entra como
   métrica de protocolo igual às demais.
+- **Resolução de conflito no recall** — defeito mapeado na verificação viva
+  do fix de alias ([`registro/2026-10-21-verificacao-fix-alias.md`](docs/research/registro/2026-10-21-verificacao-fix-alias.md)):
+  com o encadeamento funcionando, a resposta de estado ainda erra porque o
+  recall prefere a linha antiga ("gato chamado Tobi", confiança 1.0, casamento
+  literal com a pergunta) à linha de estado atual (que nem entra no contexto).
+  Proposta: critério de conflito entre memórias ativas do mesmo domínio com
+  discriminação de estado atual vs. histórico/evento, medido por pré-registro
+  próprio (o benchmark v2 já mede `state_correct`).
 
 ## Funcionamento
 
@@ -82,7 +94,11 @@ Ideias candidatas (aguardando pré-registro próprio):
 2. Uma LLM extrai candidatos a fatos, interesses, preferências, projetos,
    decisões, informações de saúde e planos.
 3. Para um assunto já registrado, um juiz classifica a observação como
-   confirmação, complemento ou contradição. Cada mudança gera uma revisão.
+   confirmação, complemento, contradição ou assunto não relacionado. Sob
+   renomeação de entidade, um pareamento determinístico de assunto (puro,
+   sem LLM) propõe candidatos de alias para o mesmo juiz — a cadeia de
+   contradição encadeia mesmo quando a chave muda. Cada mudança gera uma
+   revisão.
 4. Para responder, o assistente combina busca vetorial com sobreposição lexical
    e sinônimos, filtrando memórias inativas e planos vencidos.
 5. Correções explícitas atualizam o estado; o esquecimento o retira do contexto,
