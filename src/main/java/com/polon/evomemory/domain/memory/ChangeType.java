@@ -5,6 +5,7 @@ public enum ChangeType {
     CONFIRMED,
     COMPLEMENTED,
     CONTRADICTED,
+    UNRELATED,
     CORRECTED,
     FORGOTTEN
 }

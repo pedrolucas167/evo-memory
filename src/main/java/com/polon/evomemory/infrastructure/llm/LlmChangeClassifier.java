@@ -28,9 +28,10 @@ class LlmChangeClassifier implements ChangeClassifier {
             - CONFIRMED: a nova informação repete o que a memória já diz.
             - COMPLEMENTED: a nova informação acrescenta detalhes sem contrariar a memória. O conteúdo deve combinar os dois.
             - CONTRADICTED: a nova informação substitui ou contraria a memória (mudança de fato, de opinião ou de decisão). O conteúdo deve refletir apenas o estado mais recente.
+            - UNRELATED: a nova informação NÃO trata do assunto da memória (não repete, não acrescenta e não contraria); use apenas quando não houver relação temática.
 
             Responda apenas com JSON neste formato:
-            {"decision": "CONFIRMED|COMPLEMENTED|CONTRADICTED", "content": "frase curta em português", "reason": "motivo em uma frase"}""";
+            {"decision": "CONFIRMED|COMPLEMENTED|CONTRADICTED|UNRELATED", "content": "frase curta em português", "reason": "motivo em uma frase"}""";
 
     private final LlmClient llmClient;
     private final LlmProperties properties;
@@ -73,12 +74,15 @@ class LlmChangeClassifier implements ChangeClassifier {
             case "CONFIRMED" -> ChangeType.CONFIRMED;
             case "COMPLEMENTED" -> ChangeType.COMPLEMENTED;
             case "CONTRADICTED" -> ChangeType.CONTRADICTED;
+            case "UNRELATED" -> ChangeType.UNRELATED;
             default -> throw new IllegalArgumentException("Decisao desconhecida do juiz");
         };
 
         String content = node.path("content").asText("").trim();
         if (type == ChangeType.CONFIRMED) {
             content = current.getContent();
+        } else if (type == ChangeType.UNRELATED) {
+            content = "";
         } else if (content.isEmpty()) {
             content = candidate.content();
         }
