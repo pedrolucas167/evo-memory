@@ -118,6 +118,106 @@ class MemoryServiceTest {
     }
 
     @Test
+    void aliasResolutionChainsContradictionAcrossEntityRename() {
+        // Defeito do dossiê 2026-10-20: "Tobi" -> "Nina" criava linha paralela
+        // sem cadeia de contradição. O alias agora encadeia na memória antiga.
+        var old = new Memory(UUID.randomUUID(), "user", MemoryKind.FACT, "gato-tobi",
+                "Adotou um gato chamado Tobi, que fugiu.", 0.8, episode.getId(), now);
+        var candidate = new CandidateMemory(MemoryKind.FACT, "gata-nina",
+                "Adotou uma gata chamada Nina para substituir Tobi.", 0.7);
+        when(store.findBySubject("user", "gata-nina")).thenReturn(Optional.empty());
+        when(store.findActiveByUser("user")).thenReturn(List.of(old));
+        when(classifier.classify(old, candidate)).thenReturn(new ChangeClassifier.Decision(
+                ChangeType.CONTRADICTED, "Adotou uma gata chamada Nina.", "troca de animal"));
+
+        var result = service.observe("user", episode, candidate);
+
+        assertThat(result).isSameAs(old);
+        assertThat(old.getSubjectKey()).isEqualTo("gato-tobi");
+        assertThat(old.getContent()).isEqualTo("Adotou uma gata chamada Nina.");
+        assertThat(old.getConfidence()).isEqualTo(0.7, within(1e-9));
+        assertThat(old.getVersion()).isEqualTo(2);
+        verify(store).saveRevision(argThat(r -> r.getChangeType() == ChangeType.CONTRADICTED
+                && "Adotou um gato chamado Tobi, que fugiu.".equals(r.getPreviousContent())));
+    }
+
+    @Test
+    void aliasScanTriesNextCandidateAfterUnrelated() {
+        var older = new Memory(UUID.randomUUID(), "user", MemoryKind.FACT, "gato-tobi",
+                "Adotou um gato chamado Tobi, que fugiu.", 0.8, episode.getId(), now.minusSeconds(120));
+        var newer = new Memory(UUID.randomUUID(), "user", MemoryKind.FACT, "animais",
+                "Adotou animais: tobi foi o primeiro.", 0.6, episode.getId(), now);
+        var candidate = new CandidateMemory(MemoryKind.FACT, "gata-nina",
+                "Adotou uma gata chamada Nina para substituir Tobi.", 0.7);
+        when(store.findBySubject("user", "gata-nina")).thenReturn(Optional.empty());
+        when(store.findActiveByUser("user")).thenReturn(List.of(older, newer));
+        when(classifier.classify(older, candidate)).thenReturn(new ChangeClassifier.Decision(
+                ChangeType.UNRELATED, "", "assunto diferente"));
+        when(classifier.classify(newer, candidate)).thenReturn(new ChangeClassifier.Decision(
+                ChangeType.CONTRADICTED, "Adotou uma gata chamada Nina.", "troca de animal"));
+
+        var result = service.observe("user", episode, candidate);
+
+        assertThat(result).isSameAs(newer);
+        assertThat(newer.getContent()).isEqualTo("Adotou uma gata chamada Nina.");
+        assertThat(older.getContent()).isEqualTo("Adotou um gato chamado Tobi, que fugiu.");
+        verify(classifier, times(2)).classify(any(), eq(candidate));
+    }
+
+    @Test
+    void aliasRejectedByJudgeCreatesNewMemory() {
+        var old = new Memory(UUID.randomUUID(), "user", MemoryKind.FACT, "academia",
+                "Frequenta academia de musculação às segundas.", 0.8, episode.getId(), now);
+        var candidate = new CandidateMemory(MemoryKind.FACT, "musculacao",
+                "Musculação agora é na academia nova da rua.", 0.7);
+        when(store.findBySubject("user", "musculacao")).thenReturn(Optional.empty());
+        when(store.findActiveByUser("user")).thenReturn(List.of(old));
+        when(classifier.classify(old, candidate)).thenReturn(new ChangeClassifier.Decision(
+                ChangeType.UNRELATED, "", "assunto diferente"));
+
+        var created = service.observe("user", episode, candidate);
+
+        assertThat(created.getSubjectKey()).isEqualTo("musculacao");
+        assertThat(created.getContent()).isEqualTo("Musculação agora é na academia nova da rua.");
+        assertThat(created.getVersion()).isEqualTo(1);
+        verify(store).saveMemory(created);
+        assertThat(old.getContent()).isEqualTo("Frequenta academia de musculação às segundas.");
+        verify(store, never()).saveMemory(same(old));
+    }
+
+    @Test
+    void noAliasCandidateSkipsTheJudge() {
+        var old = new Memory(UUID.randomUUID(), "user", MemoryKind.FACT, "viagem-janeiro",
+                "Vai viajar com os amigos em janeiro.", 0.8, episode.getId(), now);
+        var candidate = new CandidateMemory(MemoryKind.FACT, "curso-ingles",
+                "Começou aulas de inglês na terça.", 0.7);
+        when(store.findBySubject("user", "curso-ingles")).thenReturn(Optional.empty());
+        when(store.findActiveByUser("user")).thenReturn(List.of(old));
+
+        var created = service.observe("user", episode, candidate);
+
+        assertThat(created.getSubjectKey()).isEqualTo("curso-ingles");
+        verifyNoInteractions(classifier);
+    }
+
+    @Test
+    void exactSubjectUnrelatedJudgePreservesMemory() {
+        var memory = new Memory(UUID.randomUUID(), "user", MemoryKind.FACT, "viagem-janeiro",
+                "Vai viajar com os amigos em janeiro.", 0.9, episode.getId(), now);
+        var candidate = new CandidateMemory(MemoryKind.FACT, "viagem-janeiro", "Vai em janeiro.", 0.7);
+        when(store.findBySubject("user", "viagem-janeiro")).thenReturn(Optional.of(memory));
+        when(classifier.classify(memory, candidate)).thenReturn(new ChangeClassifier.Decision(
+                ChangeType.UNRELATED, "", "sem relação temática"));
+
+        service.observe("user", episode, candidate);
+
+        assertThat(memory.getContent()).isEqualTo("Vai viajar com os amigos em janeiro.");
+        assertThat(memory.getConfidence()).isEqualTo(0.9, within(1e-9));
+        verify(store).saveRevision(argThat(r -> r.getChangeType() == ChangeType.COMPLEMENTED
+                && "Vai viajar com os amigos em janeiro.".equals(r.getNewContent())));
+    }
+
+    @Test
     void correctionRequiresOwnership() {
         var id = UUID.randomUUID();
         when(store.findOwned("other", id)).thenReturn(Optional.empty());

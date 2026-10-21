@@ -40,6 +40,8 @@ public class MemoryEvolution {
                     current.evidenceCount(), current.version() + 1, now, now);
             case FORGOTTEN -> new State(current.content(), current.confidence(), MemoryStatus.RETRACTED,
                     current.evidenceCount(), current.version() + 1, current.lastConfirmedAt(), now);
+            case UNRELATED -> throw new IllegalArgumentException(
+                    "Observação não relacionada nunca evolui memória; filtre antes de evoluir");
             case CREATED -> throw new IllegalArgumentException("Use creation for the first observation");
         };
     }

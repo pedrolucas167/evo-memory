@@ -2,9 +2,11 @@ package com.polon.evomemory.application.memory;
 import com.polon.evomemory.domain.memory.MemoryStatus;
 import com.polon.evomemory.domain.memory.CandidateMemory;
 import com.polon.evomemory.domain.memory.ChangeType;
+import com.polon.evomemory.domain.memory.SubjectMatcher;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,8 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
 
     private static final Logger log = LoggerFactory.getLogger(MemoryService.class);
     private static final int NEIGHBORS = 10;
+    /** Limite de probes de juiz por observação quando a chave exata falha (contenção de custo LLM). */
+    private static final int MAX_ALIAS_PROBES = 3;
 
     private final MemoryStorePort store;
     private final ChangeClassifier classifier;
@@ -66,6 +70,30 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
     public Memory observe(String userId, Episode episode, CandidateMemory candidate) {
         Instant now = now();
         Optional<Memory> existing = store.findBySubject(userId, candidate.subjectKey());
+        if (existing.isPresent() && existing.get().getStatus() == MemoryStatus.RETRACTED) {
+            // Respeita a decisão do usuário de esquecer esta informação (antes de gastar juiz).
+            return existing.get();
+        }
+        boolean exactSubject = existing.isPresent();
+
+        // Resolução de alias (dossiê 2026-10-20): o extrator gera chaves de
+        // assunto por nome de entidade, então trocas reais de estado ("Tobi" ->
+        // "Nina") criavam linhas paralelas sem cadeia de contradição. Candidatos
+        // determinísticos (mesmo tipo + sobreposição léxica) entram na fila do
+        // juiz; o primeiro veredito não-UNRELATED vence.
+        Decision decision = null;
+        if (exactSubject) {
+            decision = classifier.classify(existing.get(), candidate);
+        } else {
+            for (Memory alias : aliasCandidates(userId, candidate)) {
+                Decision probe = classifier.classify(alias, candidate);
+                if (probe.type() != ChangeType.UNRELATED) {
+                    existing = Optional.of(alias);
+                    decision = probe;
+                    break;
+                }
+            }
+        }
 
         if (existing.isEmpty()) {
             Memory created = new Memory(UUID.randomUUID(), userId, candidate.kind(),
@@ -79,15 +107,18 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
         }
 
         Memory memory = existing.get();
-        if (memory.getStatus() == MemoryStatus.RETRACTED) {
-            // Respeita a decisão do usuário de esquecer esta informação.
-            return memory;
-        }
 
         String previousContent = memory.getContent();
         double previousConfidence = memory.getConfidence();
-        Decision decision = classifier.classify(memory, candidate);
+        decision = decision == null ? classifier.classify(memory, candidate) : decision;
 
+        if (decision.type() == ChangeType.UNRELATED) {
+            // Só alcançável na chave exata: contrato antigo não conhecia o veredito.
+            // Complemento sem troca de conteúdo preserva a memória e reforça a confiança.
+            log.warn("Juiz marcou observacao como nao relacionada na chave exata; memória preservada");
+            decision = new Decision(ChangeType.COMPLEMENTED, previousContent,
+                    "juiz marcou nao relacionado na chave exata; memoria preservada");
+        }
         if (decision.type() != ChangeType.CONFIRMED && decision.type() != ChangeType.COMPLEMENTED
                 && decision.type() != ChangeType.CONTRADICTED) {
             throw new IllegalStateException("Unexpected observation change: " + decision.type());
@@ -114,6 +145,31 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
             indexEmbedding(memory);
         }
         return memory;
+    }
+
+    /**
+     * Candidatos a alias para a observação: mesmo tipo, sobreposição léxica
+     * mínima (determinística, sem LLM), ordenados por sobreposição e, no
+     * empate, pela memória mais antiga (a mais estabelecida). A decisão final
+     * é sempre do juiz, na fila de {@code observe}.
+     */
+    private List<Memory> aliasCandidates(String userId, CandidateMemory candidate) {
+        List<Map.Entry<Memory, Integer>> scored = new ArrayList<>();
+        for (Memory memory : store.findActiveByUser(userId)) {
+            if (memory.getKind() != candidate.kind()) {
+                continue;
+            }
+            if (!SubjectMatcher.related(memory, candidate)) {
+                continue;
+            }
+            scored.add(Map.entry(memory, SubjectMatcher.overlapScore(memory, candidate)));
+        }
+        scored.sort((a, b) -> {
+            int byScore = Integer.compare(b.getValue(), a.getValue());
+            return byScore != 0 ? byScore
+                    : a.getKey().getFirstSeenAt().compareTo(b.getKey().getFirstSeenAt());
+        });
+        return scored.stream().limit(MAX_ALIAS_PROBES).map(Map.Entry::getKey).toList();
     }
 
     @Transactional
