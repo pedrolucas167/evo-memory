@@ -96,6 +96,17 @@ class LlmChangeClassifierTest {
     }
 
     @Test
+    void unrelatedCarriesNoContent() {
+        ChangeClassifier.Decision decision = classifierReturning("""
+                {"decision": "UNRELATED", "content": "", "reason": "assunto diferente"}""")
+                .classify(current, candidate);
+
+        assertThat(decision.type()).isEqualTo(ChangeType.UNRELATED);
+        assertThat(decision.content()).isEmpty();
+        assertThat(decision.reason()).contains("assunto diferente");
+    }
+
+    @Test
     void fallsBackToTextComparisonOnUnknownDecision() {
         ChangeClassifier.Decision decision = classifierReturning("""
                 {"decision": "MAYBE", "content": "x", "reason": "y"}""")
