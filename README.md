@@ -58,6 +58,17 @@ Experimentos executados:
   o encadeamento funciona de ponta a ponta, mas a resposta de estado ainda
   erra porque o recall escolhe a linha antiga — novo defeito mapeado,
   candidato a pré-registro).
+- **Ablação de candidatos largos ao juiz** (`run_obsolescence_v2.py` com
+  `RETRIEVAL_JUDGE_WIDE_CANDIDATES`, pré-registro
+  `prereg/2026-10-21-ablacao-candidatos-largos-recall.md`, dossiê
+  [`registro/2026-10-22-ablacao-candidatos-largos-recall.md`](docs/research/registro/2026-10-22-ablacao-candidatos-largos-recall.md)):
+  hipótese de engenharia nascida do diagnóstico offline do recall (a margem
+  relativa cortava o estado atual da disputa por 0,0014 de cosine). O
+  benchmark completo refutou: `state_correct` 12/30 (controle) vs 10/30
+  (largos), com `failed` 0→1 — **critério a priori: refutado, não adota,
+  frente A.2 encerrada**. A margem relativa fica; a assinatura "resposta
+  certa com grafo errado" persistiu nos dois braços, apontando para resíduo
+  de transição no grafo, não para porta de entrada de recall.
 - Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
@@ -79,14 +90,14 @@ Ideias candidatas (aguardando pré-registro próprio):
   de trabalho?") e consolidação de episódios antigos sem perda. Na
   hora certa, o desafio de custo (consultas de carreira inteira) entra como
   métrica de protocolo igual às demais.
-- **Resolução de conflito no recall** — defeito mapeado na verificação viva
-  do fix de alias ([`registro/2026-10-21-verificacao-fix-alias.md`](docs/research/registro/2026-10-21-verificacao-fix-alias.md)):
-  com o encadeamento funcionando, a resposta de estado ainda erra porque o
-  recall prefere a linha antiga ("gato chamado Tobi", confiança 1.0, casamento
-  literal com a pergunta) à linha de estado atual (que nem entra no contexto).
-  Proposta: critério de conflito entre memórias ativas do mesmo domínio com
-  discriminação de estado atual vs. histórico/evento, medido por pré-registro
-  próprio (o benchmark v2 já mede `state_correct`).
+- **Filtro de resíduo de transição no grafo** — nascida do dossiê de 22/10
+  ([`registro/2026-10-22-ablacao-candidatos-largos-recall.md`](docs/research/registro/2026-10-22-ablacao-candidatos-largos-recall.md)):
+  com o recall sob controle (ablação A.2 refutou a via da margem), a assinatura
+  dominante de `state=WRONG` é o resíduo de transição — eventos datados ("a Mel
+  morreu") e referências ("para substituir ele") mantendo ativas memórias de
+  fases fechadas, disputando o contexto com a memória de estado atual. Proposta:
+  operacionalizar "fechamento de assunto" no grafo (memória de fase vencida
+  deixa de disputar por similaridade) com pré-registro vivo.
 
 ## Funcionamento
 
