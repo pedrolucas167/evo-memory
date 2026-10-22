@@ -188,4 +188,35 @@ class ExtractionServiceTest {
         assertThatThrownBy(() -> service("isto não é json").extract(List.of("msg"), List.of()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void closingPromptAddsStateOnlyRuleWhenSubjectClosingIsEnabled() {
+        properties.setExtractionModel("test-model");
+        properties.setSubjectClosing(true);
+        final String[] capturedSystem = new String[1];
+        LlmClient client = request -> {
+            capturedSystem[0] = request.systemPrompt();
+            return "{\"memories\": []}";
+        };
+
+        new ExtractionService(client, properties, mapper).extract(List.of("msg"), List.of());
+
+        assertThat(capturedSystem[0]).contains("registre APENAS o estado novo");
+        assertThat(capturedSystem[0]).contains("subject_key NOVO");
+    }
+
+    @Test
+    void defaultPromptKeepsHistoricalBehavior() {
+        properties.setExtractionModel("test-model");
+        properties.setSubjectClosing(false);
+        final String[] capturedSystem = new String[1];
+        LlmClient client = request -> {
+            capturedSystem[0] = request.systemPrompt();
+            return "{\"memories\": []}";
+        };
+
+        new ExtractionService(client, properties, mapper).extract(List.of("msg"), List.of());
+
+        assertThat(capturedSystem[0]).doesNotContain("registre APENAS o estado novo");
+    }
 }

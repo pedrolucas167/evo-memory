@@ -38,7 +38,9 @@ public class MemoryEvolution {
                     1, current.version() + 1, now, now);
             case CORRECTED -> new State(content, 1.0, MemoryStatus.ACTIVE,
                     current.evidenceCount(), current.version() + 1, now, now);
-            case FORGOTTEN -> new State(current.content(), current.confidence(), MemoryStatus.RETRACTED,
+            // Retração (FORGOTTEN pelo usuário; CLOSED pelo fechamento de assunto do
+            // juiz): conteúdo e histórico preservados, só o estado sai do recall.
+            case FORGOTTEN, CLOSED -> new State(current.content(), current.confidence(), MemoryStatus.RETRACTED,
                     current.evidenceCount(), current.version() + 1, current.lastConfirmedAt(), now);
             case UNRELATED -> throw new IllegalArgumentException(
                     "Observação não relacionada nunca evolui memória; filtre antes de evoluir");
