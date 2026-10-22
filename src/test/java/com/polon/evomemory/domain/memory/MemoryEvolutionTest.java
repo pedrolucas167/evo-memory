@@ -60,4 +60,17 @@ class MemoryEvolutionTest {
         assertEquals("corrected", corrected.content());
         assertEquals(6, corrected.version());
     }
+
+    @Test
+    void closingRetractsLikeForgettingPreservingContentAndHistory() {
+        // Fechamento de assunto (22/10): mesmo estado de retração do esquecimento
+        // do usuário — conteúdo, confiança e histórico de confirmação intactos.
+        var closed = MemoryEvolution.evolve(original, ChangeType.CLOSED, "ignored", 0.3, now);
+        assertEquals(MemoryStatus.RETRACTED, closed.status());
+        assertEquals("old", closed.content());
+        assertEquals(0.8, closed.confidence());
+        assertEquals(3, closed.evidenceCount());
+        assertEquals(before, closed.lastConfirmedAt());
+        assertEquals(5, closed.version());
+    }
 }

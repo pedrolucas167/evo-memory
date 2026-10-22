@@ -24,6 +24,36 @@ public class ExtractionService {
 
     private static final Logger log = LoggerFactory.getLogger(ExtractionService.class);
 
+    /**
+     * Extrator do pacote de fechamento de assunto (pré-registro 22/10): estado
+     * novo descrito sem narrar a transição, com chave própria — a fase antiga
+     * fecha pelo juiz (CLOSED).
+     */
+    private static final String SYSTEM_PROMPT_WITH_CLOSING = """
+            Você extrai memórias sobre o usuário a partir das mensagens dele.
+
+            Tipos:
+            - INTEREST: assunto que o usuário estuda ou acompanha (ex.: "está estudando sistemas distribuídos").
+            - PREFERENCE: gosto, escolha ou forma de trabalhar que o usuário prefere (ex.: "prefere consistência eventual").
+            - PROJECT: algo que o usuário está construindo ou desenvolvendo.
+            - DECISION: escolha já tomada e assumida pelo usuário (ex.: "decidiu usar PostgreSQL").
+            - FACT: dado pessoal ou circunstância objetiva (ex.: "mora em Florianópolis").
+            - HEALTH: alergia, restrição alimentar ou condição de saúde que o próprio usuário declara sobre si (ex.: "sou alérgico a amendoim").
+            - PLAN: intenção declarada de fazer algo (ex.: "vou viajar para o Japão em abril"). Se a mensagem trouxer uma data, preencha valid_until com AAAA-MM-DD; caso contrário, null.
+
+            Regras:
+            - Registre apenas afirmações feitas pelo usuário como fatos sobre si.
+            - Não registre hipóteses ("e se...", "talvez", "seria legal"), perguntas, ironia ou brincadeiras.
+            - Não registre planos de outras pessoas.
+            - Não registre documentos (CPF, RG), senhas, números de cartão ou endereços completos.
+            - Se a mensagem disser que um plano foi cancelado ou concluído, use o mesmo subject_key do plano, com o conteúdo atualizado (ex.: "Cancelou a viagem para o Japão.") e kind PLAN.
+            - Se uma mensagem atualiza uma memória existente sem encerrar a fase que ela descreve, use o mesmo subject_key com o conteúdo atualizado.
+            - Se a mensagem encerra uma fase (algo ou alguém morreu, partiu, foi vendido, terminou, foi cancelado ou concluído) e introduz um estado novo (adotou, comprou, contratou, mudou-se), registre APENAS o estado novo: o conteúdo não narra a transição nem cita a fase encerrada (em vez de "A gata Mel morreu e adotou Tobi", escreva "Adotou um gato chamado Tobi."), e use um subject_key NOVO para esse estado (a memória da fase encerrada será fechada pelo juiz).
+            - Se nada for relevante, retorne uma lista vazia.
+
+            Responda apenas com JSON neste formato:
+            {"memories": [{"kind": "INTEREST|PREFERENCE|PROJECT|DECISION|FACT|HEALTH|PLAN", "subject_key": "slug-curto", "content": "frase curta em português", "confidence": 0.0, "valid_until": null}]}""";
+
     private static final String SYSTEM_PROMPT = """
             Você extrai memórias sobre o usuário a partir das mensagens dele.
 
@@ -65,7 +95,9 @@ public class ExtractionService {
                 + String.join("\n", messages.stream().map("- "::concat).toList());
 
         String raw = llmClient.complete(new LlmRequest(
-                properties.getExtractionModel(), SYSTEM_PROMPT, userPrompt, 0.0));
+                properties.getExtractionModel(),
+                properties.isSubjectClosing() ? SYSTEM_PROMPT_WITH_CLOSING : SYSTEM_PROMPT,
+                userPrompt, 0.0));
         return parse(raw);
     }
 

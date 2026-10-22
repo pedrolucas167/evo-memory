@@ -225,4 +225,59 @@ class MemoryServiceTest {
                 .isInstanceOf(java.util.NoSuchElementException.class);
         verify(store, never()).saveMemory(any());
     }
+
+    @Test
+    void closingPhaseRetractsTheEndedPhaseAndBirthsTheNewState() {
+        // Fechamento de assunto (22/10): o juiz encerra a fase da memória antiga
+        // (a gata morreu) e o estado novo nasce como linha própria — sem fundir
+        // a transição no conteúdo vivo.
+        var old = new Memory(UUID.randomUUID(), "user", MemoryKind.FACT, "gata-mel",
+                "Tem uma gata chamada Mel.", 0.8, episode.getId(), now);
+        var candidate = new CandidateMemory(MemoryKind.FACT, "gata-nina",
+                "A gata Mel morreu; adotou uma gata chamada Nina.", 0.7);
+        when(store.findBySubject("user", "gata-nina")).thenReturn(Optional.empty());
+        when(store.findActiveByUser("user")).thenReturn(List.of(old));
+        when(classifier.classify(old, candidate)).thenReturn(new ChangeClassifier.Decision(
+                ChangeType.CLOSED, "Adotou uma gata chamada Nina.", "a gata morreu e foi substituída"));
+
+        var created = service.observe("user", episode, candidate);
+
+        assertThat(old.getStatus()).isEqualTo(MemoryStatus.RETRACTED);
+        assertThat(old.getContent()).isEqualTo("Tem uma gata chamada Mel.");
+        assertThat(created.getSubjectKey()).isEqualTo("gata-nina");
+        assertThat(created.getContent()).isEqualTo("A gata Mel morreu; adotou uma gata chamada Nina.");
+        assertThat(created.getStatus()).isEqualTo(MemoryStatus.ACTIVE);
+        verify(store).saveRevision(argThat(r -> r.getChangeType() == ChangeType.CLOSED
+                && r.getMemoryId().equals(old.getId())
+                && "Tem uma gata chamada Mel.".equals(r.getNewContent())));
+        verify(store).saveRevision(argThat(r -> r.getChangeType() == ChangeType.CREATED
+                && r.getMemoryId().equals(created.getId())));
+        verify(vectors).store(eq(created.getId()), any(), any());
+        verify(vectors, never()).store(eq(old.getId()), any(), any());
+    }
+
+    @Test
+    void closingWithTheClosedPhaseSubjectKeySkipsTheNewRow() {
+        // A chave única (usuário, subject_key) da fase fechada permanece ocupada:
+        // sem chave própria no candidato, só a retração acontece — a fase que
+        // fecha não pode reencarnar na mesma chave.
+        var old = new Memory(UUID.randomUUID(), "user", MemoryKind.PLAN, "viagem-japao",
+                "Vai viajar para o Japão em abril.", 0.8, episode.getId(), now);
+        var candidate = new CandidateMemory(MemoryKind.PLAN, "viagem-japao",
+                "Cancelou a viagem para o Japão.", 0.7);
+        when(store.findBySubject("user", "viagem-japao")).thenReturn(Optional.of(old));
+        when(classifier.classify(old, candidate)).thenReturn(new ChangeClassifier.Decision(
+                ChangeType.CLOSED, "Cancelou a viagem para o Japão.", "plano cancelado"));
+
+        var result = service.observe("user", episode, candidate);
+
+        assertThat(result).isSameAs(old);
+        assertThat(old.getStatus()).isEqualTo(MemoryStatus.RETRACTED);
+        assertThat(old.getContent()).isEqualTo("Vai viajar para o Japão em abril.");
+        verify(store).saveRevision(argThat(r -> r.getChangeType() == ChangeType.CLOSED
+                && r.getMemoryId().equals(old.getId())));
+        verify(store).saveMemory(old);
+        verify(vectors, never()).store(any(), any(), any());
+        verifyNoInteractions(embeddings);
+    }
 }

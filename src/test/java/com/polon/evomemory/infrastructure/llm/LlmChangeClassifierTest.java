@@ -122,4 +122,37 @@ class LlmChangeClassifierTest {
         assertThat(decision.type()).isEqualTo(ChangeType.CONTRADICTED);
         assertThat(decision.content()).isEqualTo("Mora em Florianópolis.");
     }
+
+    @Test
+    void closedVerdictIsParsedWhenSubjectClosingIsEnabled() {
+        LlmProperties properties = new LlmProperties();
+        properties.setJudgeModel("judge-model");
+        properties.setSubjectClosing(true);
+        final String[] capturedSystem = new String[1];
+        LlmClient client = request -> {
+            capturedSystem[0] = request.systemPrompt();
+            return """
+                    {"decision": "CLOSED", "content": "Mora em Florianópolis.", "reason": "fase encerrada"}""";
+        };
+
+        ChangeClassifier.Decision decision = new LlmChangeClassifier(client, properties, mapper,
+                new SimpleChangeClassifier()).classify(current, candidate);
+
+        assertThat(decision.type()).isEqualTo(ChangeType.CLOSED);
+        assertThat(decision.content()).isEqualTo("Mora em Florianópolis.");
+        assertThat(decision.reason()).contains("fase encerrada");
+        assertThat(capturedSystem[0]).contains("CLOSED");
+    }
+
+    @Test
+    void closedVerdictFallsBackToTextComparisonWhenSubjectClosingIsDisabled() {
+        // Chave desligada: o contrato do juiz permanece o de quatro vereditos e
+        // uma resposta CLOSED degrada para a comparação textual legada.
+        ChangeClassifier.Decision decision = classifierReturning("""
+                {"decision": "CLOSED", "content": "Mora em Florianópolis.", "reason": "x"}""")
+                .classify(current, candidate);
+
+        assertThat(decision.type()).isEqualTo(ChangeType.CONTRADICTED);
+        assertThat(decision.content()).isEqualTo("Mora em Florianópolis.");
+    }
 }

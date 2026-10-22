@@ -7,5 +7,6 @@ public enum ChangeType {
     CONTRADICTED,
     UNRELATED,
     CORRECTED,
-    FORGOTTEN
+    FORGOTTEN,
+    CLOSED
 }
