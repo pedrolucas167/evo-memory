@@ -12,6 +12,15 @@ public class LlmProperties {
     private String chatModel;
     private String embeddingModel;
     private long retryBackoffMillis = 2000;
+    /**
+     * Fechamento de assunto (frente 1, pré-registro 22/10): quando LIGADO, o juiz
+     * ganha o veredito CLOSED (fase encerrada pela nova informação) e a extração
+     * passa a descrever só o estado novo, sem narrar a transição. Na evolução,
+     * CLOSED retrai a memória de referência (conteúdo e histórico preservados)
+     * e o estado novo nasce como memória própria. Padrão DESLIGADO: sem
+     * medição pré-registrada não vira comportamento padrão.
+     */
+    private boolean subjectClosing = false;
 
     public String getBaseUrl() {
         return baseUrl;
@@ -67,5 +76,13 @@ public class LlmProperties {
 
     public void setRetryBackoffMillis(long retryBackoffMillis) {
         this.retryBackoffMillis = retryBackoffMillis;
+    }
+
+    public boolean isSubjectClosing() {
+        return subjectClosing;
+    }
+
+    public void setSubjectClosing(boolean subjectClosing) {
+        this.subjectClosing = subjectClosing;
     }
 }

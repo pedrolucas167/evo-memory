@@ -120,8 +120,13 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
                     "juiz marcou nao relacionado na chave exata; memoria preservada");
         }
         if (decision.type() != ChangeType.CONFIRMED && decision.type() != ChangeType.COMPLEMENTED
-                && decision.type() != ChangeType.CONTRADICTED) {
+                && decision.type() != ChangeType.CONTRADICTED
+                && decision.type() != ChangeType.CLOSED) {
             throw new IllegalStateException("Unexpected observation change: " + decision.type());
+        }
+        if (decision.type() == ChangeType.CLOSED) {
+            return closePhase(memory, candidate, decision, previousContent, previousConfidence,
+                    episode.getId(), now);
         }
         double confidence = decision.type() == ChangeType.COMPLEMENTED
                 ? Math.max(previousConfidence, candidate.confidence()) : candidate.confidence();
@@ -145,6 +150,41 @@ public class MemoryService implements com.polon.evomemory.application.ports.Memo
             indexEmbedding(memory);
         }
         return memory;
+    }
+
+    /**
+     * Fechamento de assunto (pré-registro 22/10): o juiz marcou a memória de
+     * referência como fase encerrada pela nova informação. A fase sai do recall
+     * por retração (conteúdo e histórico preservados em revisão; o filtro de
+     * status do armazém vetorial já a exclui) e o estado novo nasce como
+     * memória própria com os campos do candidato — sem fundir a transição no
+     * conteúdo vivo.
+     */
+    private Memory closePhase(Memory memory, CandidateMemory candidate, Decision decision,
+                              String previousContent, double previousConfidence,
+                              UUID episodeId, Instant now) {
+        memory.apply(evolution.evolve(memory.state(), ChangeType.CLOSED, previousContent,
+                previousConfidence, now));
+        store.saveMemory(memory);
+        recordRevision(memory, ChangeType.CLOSED, previousContent, previousConfidence,
+                episodeId, decision.reason(), now);
+
+        if (candidate.subjectKey().equals(memory.getSubjectKey())) {
+            // O estado novo esbarraria na chave única da fase fechada; sem chave
+            // própria, o estado novo aguarda um candidato futuro (a regra de
+            // extração do pacote pede chave nova porque a fase antiga se fecha).
+            log.warn("Estado novo fechou assunto com a mesma chave da fase encerrada; sem nova linha");
+            return memory;
+        }
+
+        Memory created = new Memory(UUID.randomUUID(), memory.getUserId(), candidate.kind(),
+                candidate.subjectKey(), candidate.content(), candidate.confidence(), episodeId, now, "general");
+        created.setValidUntil(candidate.validUntil());
+        store.saveMemory(created);
+        recordRevision(created, ChangeType.CREATED, null, null, episodeId,
+                "estado novo após fechamento de assunto", now);
+        indexEmbedding(created);
+        return created;
     }
 
     /**
