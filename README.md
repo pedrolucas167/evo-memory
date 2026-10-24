@@ -48,8 +48,9 @@ Experimentos executados:
   Respostas obsoletas **0/30 × 0/30 de novo** — segundo empate consecutivo,
   **operacionalização encerrada por pré-registro: a hipótese central segue
   não demonstrada**. Achados exploratórios com valor de engenharia:
-  (1) custo real ~18× (117 s/caso e 62 chamadas estimadas vs. 2,35 s e 1
-  chamada); (2) ambiguidade de resposta tem correlação perfeita com resíduo
+  (1) maior esforço operacional observado (117 s/caso e 62 chamadas
+  estimadas vs. 2,35 s e 1 chamada), sem comparação monetária equivalente;
+  (2) ambiguidade de resposta tem correlação perfeita com resíduo
   no grafo; (3) o diagnóstico revelou **chaves de assunto paralelas sob
   troca de entidade nomeada** ("Mel/Tobi/Nina" viram assuntos distintos e a
   cadeia de contradição nunca encadeia) — defeito mapeado e **corrigido em
@@ -404,6 +405,16 @@ Os relatórios temporais registram dataset, hashes, revisão Git, estado do
 checkout, configuração efetiva, verificações e latência por caso. Resultados
 locais ficam em `evals/results/`, fora do Git. O cliente não repete escritas
 que retornaram erro do servidor, pois elas podem já ter sido persistidas.
+
+**Limitação da comparação de custo:** no medidor de obsolescência v2, as
+chamadas LLM do Evo Memory são estimadas; o baseline de histórico completo
+registra os tokens retornados pelo provedor quando disponíveis. Essas medidas
+não constituem um custo monetário total comparável entre os sistemas. Latência,
+contagem de chamadas e gasto financeiro são métricas distintas. Uma comparação
+financeira exige contabilizar o uso de chat, extração, juiz e embeddings nos
+dois sistemas, com preços e condições da rodada registrados; a instrumentação
+atual não sustenta uma conclusão de economia ou um multiplicador de custo
+monetário.
 
 Use calibração para ajustar parâmetros e conjuntos separados para validar.
 Não ajuste o algoritmo com os casos de validação e depois apresente o mesmo
