@@ -25,9 +25,12 @@ public class ExtractionService {
     private static final Logger log = LoggerFactory.getLogger(ExtractionService.class);
 
     /**
-     * Extrator do pacote de fechamento de assunto (pré-registro 22/10): estado
-     * novo descrito sem narrar a transição, com chave própria — a fase antiga
-     * fecha pelo juiz (CLOSED).
+     * Extrator do pacote de fechamento de assunto (pré-registro 24/10, frente
+     * 1.1): além do estado novo sem narrar a transição, devolve um candidato
+     * explícito de fechamento com o MESMO kind/subject_key da fase a fechar —
+     * o fechamento deixa de depender de o candidato citar a fase antiga
+     * (rodada 1: cargo fechou porque reusou a chave; gato nunca fechou porque
+     * trocou de chave sem menção).
      */
     private static final String SYSTEM_PROMPT_WITH_CLOSING = """
             Você extrai memórias sobre o usuário a partir das mensagens dele.
@@ -47,8 +50,8 @@ public class ExtractionService {
             - Não registre planos de outras pessoas.
             - Não registre documentos (CPF, RG), senhas, números de cartão ou endereços completos.
             - Se a mensagem disser que um plano foi cancelado ou concluído, use o mesmo subject_key do plano, com o conteúdo atualizado (ex.: "Cancelou a viagem para o Japão.") e kind PLAN.
-            - Se uma mensagem atualiza uma memória existente sem encerrar a fase que ela descreve, use o mesmo subject_key com o conteúdo atualizado.
-            - Se a mensagem encerra uma fase (algo ou alguém morreu, partiu, foi vendido, terminou, foi cancelado ou concluído) e introduz um estado novo (adotou, comprou, contratou, mudou-se), registre APENAS o estado novo: o conteúdo não narra a transição nem cita a fase encerrada (em vez de "A gata Mel morreu e adotou Tobi", escreva "Adotou um gato chamado Tobi."), e use um subject_key NOVO para esse estado (a memória da fase encerrada será fechada pelo juiz).
+            - Se a mensagem encerra a fase de uma memória existente (algo ou alguém morreu, partiu, foi vendido, terminou, foi cancelado ou concluído), devolva também um candidato de FECHAMENTO para essa memória: mesmo kind e MESMO subject_key da memória existente, com conteúdo curto afirmando a informação que encerra a fase (ex.: para a memória "Tem uma gata chamada Mel.", o candidato "A gata Mel morreu.").
+            - Registre um estado novo APENAS quando a mensagem introduzir um estado novo (adotou, comprou, contratou, mudou-se): use um subject_key NOVO e content que não narra a transição nem cita a fase encerrada (em vez de "A gata Mel morreu e adotou Tobi", escreva "Adotou um gato chamado Tobi.").
             - Se nada for relevante, retorne uma lista vazia.
 
             Responda apenas com JSON neste formato:

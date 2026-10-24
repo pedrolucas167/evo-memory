@@ -190,7 +190,7 @@ class ExtractionServiceTest {
     }
 
     @Test
-    void closingPromptAddsStateOnlyRuleWhenSubjectClosingIsEnabled() {
+    void closingPromptAddsClosureCandidateAndStateRulesWhenSubjectClosingIsEnabled() {
         properties.setExtractionModel("test-model");
         properties.setSubjectClosing(true);
         final String[] capturedSystem = new String[1];
@@ -201,7 +201,10 @@ class ExtractionServiceTest {
 
         new ExtractionService(client, properties, mapper).extract(List.of("msg"), List.of());
 
-        assertThat(capturedSystem[0]).contains("registre APENAS o estado novo");
+        // Frente 1.1: candidato de fechamento explícito (mesma chave da fase)
+        // e estado novo com chave própria.
+        assertThat(capturedSystem[0]).contains("candidato de FECHAMENTO");
+        assertThat(capturedSystem[0]).contains("MESMO subject_key da memória existente");
         assertThat(capturedSystem[0]).contains("subject_key NOVO");
     }
 
@@ -217,6 +220,6 @@ class ExtractionServiceTest {
 
         new ExtractionService(client, properties, mapper).extract(List.of("msg"), List.of());
 
-        assertThat(capturedSystem[0]).doesNotContain("registre APENAS o estado novo");
+        assertThat(capturedSystem[0]).doesNotContain("candidato de FECHAMENTO");
     }
 }
