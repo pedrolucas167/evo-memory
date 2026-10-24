@@ -69,12 +69,36 @@ Experimentos executados:
   frente A.2 encerrada**. A margem relativa fica; a assinatura "resposta
   certa com grafo errado" persistiu nos dois braços, apontando para resíduo
   de transição no grafo, não para porta de entrada de recall.
+- **Fechamento de assunto no grafo (frente 1)** (`MEMORY_SUBJECT_CLOSING`,
+  pré-registro `prereg/2026-10-22-fechamento-de-assunto.md`, dossiê
+  [`registro/2026-10-24-fechamento-de-assunto.md`](docs/research/registro/2026-10-24-fechamento-de-assunto.md)):
+  pacote com veredito CLOSED no juiz, retração da fase encerrada (histórico
+  preservado), estado novo como memória própria e extração sem narrar
+  transição. **Primeiro delta primário positivo do programa** (`state_correct`
+  11/30 controle vs 14/30 tratamento, +3/30 — todo em `cargo-abc`, com
+  respostas de estado puro) **e a primeira adoção bloqueada por regressão**
+  (`obsolete_intermediate` 0→4 no caso gato, `failed` 0→4 com notas de
+  provedor) — critério a priori: **não adota; frente segue aberta**. O gap
+  mapeado: o fechamento só dispara quando o candidato cita a fase antiga
+  (cargo reusou a chave e fechou; gato trocou de chave sem menção e a fase
+  de Tobi sobreviveu) — candidata a frente 1.1 com pré-registro novo.
 - Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
 
 Ideias candidatas (aguardando pré-registro próprio):
 
+- **Frente 1.1 — fechamento de fase sem menção (novo pré-registro)** — nascida
+  da rodada 1 do fechamento
+  ([`registro/2026-10-24-fechamento-de-assunto.md`](docs/research/registro/2026-10-24-fechamento-de-assunto.md)):
+  o veredito CLOSED provou valor onde o candidato pousa na fase a fechar
+  (`cargo-abc` 1→4, respostas de estado puro), mas não dispara quando o
+  candidato troca de chave sem citar a fase antiga (`gato-abc` respondeu
+  "Tobi" 4/5 com a fase ancorada). Proposta pré-registrável: estender a
+  proposta de alias para sondas de fechamento (mesma regra, sem menção
+  literal) ou o extrator marcando explicitamente a fase encerrada — decisão
+  e desenho novos, com o limiar de ganho/falha a priori redefinido para o
+  regime observado.
 - **Trajetória de usuário em 10 anos (memória episódica de excelência)** —
   ideia do proprietário do projeto. Uma IA que acompanha a vida do usuário
   de forma precisa por uma década: por exemplo, um usuário que começa a usar
@@ -90,14 +114,6 @@ Ideias candidatas (aguardando pré-registro próprio):
   de trabalho?") e consolidação de episódios antigos sem perda. Na
   hora certa, o desafio de custo (consultas de carreira inteira) entra como
   métrica de protocolo igual às demais.
-- **Filtro de resíduo de transição no grafo** — nascida do dossiê de 22/10
-  ([`registro/2026-10-22-ablacao-candidatos-largos-recall.md`](docs/research/registro/2026-10-22-ablacao-candidatos-largos-recall.md)):
-  com o recall sob controle (ablação A.2 refutou a via da margem), a assinatura
-  dominante de `state=WRONG` é o resíduo de transição — eventos datados ("a Mel
-  morreu") e referências ("para substituir ele") mantendo ativas memórias de
-  fases fechadas, disputando o contexto com a memória de estado atual. Proposta:
-  operacionalizar "fechamento de assunto" no grafo (memória de fase vencida
-  deixa de disputar por similaridade) com pré-registro vivo.
 
 ## Funcionamento
 
