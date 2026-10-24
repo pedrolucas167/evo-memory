@@ -1,8 +1,9 @@
 # Relatório técnico preliminar: transições e limites da memória evolutiva
 
-Data: 24 de outubro de 2026. Status: rascunho de síntese, não um novo
-experimento confirmatório. A rodada da frente 1.1 permanece pendente neste
-documento. Nenhuma medição adicional foi executada para escrever esta síntese.
+Data: 24 de outubro de 2026. Status: síntese atualizada após o término da
+frente 1.1, não um novo experimento confirmatório. A execução terminou;
+a auditoria de montagem permanece pendente. Nenhuma medição adicional foi
+executada para escrever esta síntese.
 
 ## Resumo
 
@@ -92,21 +93,27 @@ valor a pagar, economia ou multiplicador monetário. Uma avaliação financeira
 futura deve registrar uso por operação, preços da rodada, falhas cobradas e
 quantidade de consultas que amortizam a ingestão.
 
-## Rodada atual e risco de crédito
+## Frente 1.1 concluída e risco de crédito
 
 A frente 1.1 tem [pré-registro próprio](prereg/2026-10-24-sonda-fechamento-explícito.md).
-Foi identificada uma execução em andamento e um relatório completo produzido
-hoje; a associação final dos arquivos aos grupos deve ser confirmada antes
-de publicar uma comparação. Esta síntese não interpreta dados parciais.
+Os dois relatórios completos foram conferidos no
+[dossiê da rodada](registro/2026-10-24-sonda-fechamento-explicito.md), com
+hashes, contagens por caso e ressalva sobre a identificação dos grupos.
+Sob a identificação presumida de controle e tratamento, o indicador de estado
+passou de 11/30 para 27/30; respostas corretas, de 17/30 para 27/30;
+ambíguas, de 13 para 2; falhas, de 0 para 1 (timeout). Não houve resposta
+obsoleta em nenhuma execução. O baseline teve 24/30 corretas em cada uma.
+Não foram usados resultados parciais.
 
 | Entrega da frente 1.1 | Estado nesta síntese |
 |---|---|
-| Identificação e conferência dos relatórios A e B | Pendente |
-| Contagens por cenário e critérios congelados | Pendente |
-| Latências e estimativas de chamadas | Pendente |
-| Decisão de adoção | Pendente; padrão não alterado |
+| Identificação e conferência dos relatórios A e B | Arquivos íntegros; chave experimental ausente no snapshot, montagem ainda sob auditoria |
+| Contagens por cenário e critérios congelados | Conferidas; +16/30 no estado e +1/30 em falhas, condicionados à identificação dos grupos |
+| Latências e estimativas de chamadas | Registradas no dossiê; não equivalem a custo financeiro |
+| Decisão de adoção | Critérios numéricos satisfeitos condicionalmente; padrão não alterado enquanto falta evidência da montagem |
 
-O saldo do OpenRouter não foi consultado. Falta de crédito é um risco informado
+O saldo do OpenRouter não foi consultado. A falha registrada é um timeout,
+sem prova de insuficiência de crédito. Falta de crédito é um risco informado
 pelo proprietário, não uma causa de falha observada e confirmada aqui. Se
 ocorrer, registrar a evidência disponível, o ponto da interrupção e as falhas
 sem credenciais. Não atribuir automaticamente todo erro ao saldo, nem remover
@@ -129,8 +136,9 @@ congelada. Não executar repetições extras apenas para substituir falhas.
   do provedor; não há estimativa causal forte ou significância demonstrada.
 - A mudança é um pacote: não isola o efeito de cada componente nem do OLS.
 
-Primeiro, concluir ou documentar a interrupção da frente 1.1 e aplicar somente
-os critérios já registrados. Depois, formular um novo protocolo para o que
+Primeiro, auditar a identificação dos braços usando os comandos e logs
+originais: o ganho numérico não supre uma configuração não registrada.
+Depois, formular um novo protocolo para o que
 restar aberto. Uma avaliação futura deve separar preservação histórica,
 correção do estado atual, qualidade de resposta e custo amortizado, com
 persistência incremental, orçamento definido e casos de validação separados.
@@ -141,6 +149,7 @@ A evidência disponível identifica limites da evolução e da recuperação de
 estado, e mostra que um ganho localizado pode coexistir com regressões.
 Isso é material para um relatório técnico exploratório reproduzível. Ainda
 não demonstra superioridade da arquitetura, benefício do OLS neste regime
-ou custo financeiro competitivo. A rodada em andamento deve ser acrescentada
-em atualização posterior, com seus resultados completos ou sua interrupção
-explicitamente documentada.
+ou custo financeiro competitivo. A frente 1.1 trouxe um sinal descritivo
+positivo com resultados completos, mas sua atribuição ao tratamento exige
+fechar a lacuna de montagem antes de adotar o pacote. Não são necessárias
+novas chamadas pagas para consolidar estes números.
