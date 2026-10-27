@@ -13,12 +13,15 @@ public class LlmProperties {
     private String embeddingModel;
     private long retryBackoffMillis = 2000;
     /**
-     * Fechamento de assunto (frente 1, pré-registro 22/10): quando LIGADO, o juiz
-     * ganha o veredito CLOSED (fase encerrada pela nova informação) e a extração
-     * passa a descrever só o estado novo, sem narrar a transição. Na evolução,
-     * CLOSED retrai a memória de referência (conteúdo e histórico preservados)
-     * e o estado novo nasce como memória própria. Padrão DESLIGADO: sem
-     * medição pré-registrada não vira comportamento padrão.
+     * Fechamento de assunto: o juiz ganha o veredito CLOSED (fase encerrada
+     * pela nova informação) e a extração descreve só o estado novo, sem
+     * narrar a transição, com candidato de fechamento explícito (mesmo
+     * kind/subject_key da fase) e estado novo com chave própria. Na evolução,
+     * CLOSED retrai a memória de referência (conteúdo e histórico
+     * preservados) e o estado novo nasce como memória própria. Padrão LIGADO
+     * por medição (dossiê 26/10: state_correct 27/30 vs 11/30 no controle,
+     * falhas +1/30 — adotado pelos critérios a priori do pré-registro
+     * 2026-10-24; env MEMORY_SUBJECT_CLOSING=false reverte em emergência).
      */
     private boolean subjectClosing = false;
 

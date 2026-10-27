@@ -82,24 +82,24 @@ Experimentos executados:
   provedor) — critério a priori: **não adota; frente segue aberta**. O gap
   mapeado: o fechamento só dispara quando o candidato cita a fase antiga
   (cargo reusou a chave e fechou; gato trocou de chave sem menção e a fase
-  de Tobi sobreviveu) — candidata a frente 1.1 com pré-registro novo.
+  de Tobi sobreviveu) — atacada pela frente 1.1, abaixo.
+- **Sonda de fechamento explícito (frente 1.1, ADOTADA)** (`MEMORY_SUBJECT_CLOSING`,
+  pré-registro `prereg/2026-10-24-sonda-fechamento-explicito.md`, dossiê
+  [`registro/2026-10-26-sonda-fechamento-explicito.md`](docs/research/registro/2026-10-26-sonda-fechamento-explicito.md)):
+  o extrator passa a devolver um candidato de fechamento com o MESMO
+  `kind`/`subject_key` da fase a fechar (além do estado novo com chave
+  própria), eliminando a dependência da menção literal. **Primeira adoção no
+  medidor v2 pelos critérios a priori**: `state_correct` 11/30 (controle) vs
+  **27/30** (tratamento, +16/30) com falhas +1/30 (teto +2/30) — gato, cargo
+  e instrumento 0→5/5 cada; `futebol-abc` 0→2/5 (sobram escorregões de dia,
+  reservados a pré-registro próprio). Custo: +129 s/caso nesta janela;
+  `obsolete_old` segue 0/30 pela 5ª rodada consecutiva.
 - Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.
 
 Ideias candidatas (aguardando pré-registro próprio):
 
-- **Frente 1.1 — fechamento de fase sem menção (novo pré-registro)** — nascida
-  da rodada 1 do fechamento
-  ([`registro/2026-10-24-fechamento-de-assunto.md`](docs/research/registro/2026-10-24-fechamento-de-assunto.md)):
-  o veredito CLOSED provou valor onde o candidato pousa na fase a fechar
-  (`cargo-abc` 1→4, respostas de estado puro), mas não dispara quando o
-  candidato troca de chave sem citar a fase antiga (`gato-abc` respondeu
-  "Tobi" 4/5 com a fase ancorada). Proposta pré-registrável: estender a
-  proposta de alias para sondas de fechamento (mesma regra, sem menção
-  literal) ou o extrator marcando explicitamente a fase encerrada — decisão
-  e desenho novos, com o limiar de ganho/falha a priori redefinido para o
-  regime observado.
 - **Trajetória de usuário em 10 anos (memória episódica de excelência)** —
   ideia do proprietário do projeto. Uma IA que acompanha a vida do usuário
   de forma precisa por uma década: por exemplo, um usuário que começa a usar
