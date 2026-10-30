@@ -24,6 +24,19 @@ public class LlmProperties {
      * 2026-10-24; env MEMORY_SUBJECT_CLOSING=false reverte em emergência).
      */
     private boolean subjectClosing = false;
+    /**
+     * Fechamento em transição "de X para Y" (frente 2, pré-registro 30/10):
+     * com o fechamento LIGADO, estende a regra do extrator para transições
+     * declaradas de fato do dia a dia (dia de jogo, cargo, sabor) — exige
+     * sempre dois candidatos: fechamento com a MESMA chave da fase antiga e
+     * estado novo com chave própria. Diagnóstico (usuários dedicados
+     * diag-dia-10/11) mostrou a perda: o extrator colapsa a mensagem num
+     * único candidato de fechamento e a guarda da chave única descarta a
+     * linha do estado novo (o juiz não vê a mensagem crua e não pode
+     * resgatá-la). Padrão DESLIGADO até a medição; env
+     * MEMORY_CLOSING_SPLIT=true liga o braço de tratamento.
+     */
+    private boolean closingSplit = false;
 
     public String getBaseUrl() {
         return baseUrl;
@@ -87,5 +100,13 @@ public class LlmProperties {
 
     public void setSubjectClosing(boolean subjectClosing) {
         this.subjectClosing = subjectClosing;
+    }
+
+    public boolean isClosingSplit() {
+        return closingSplit;
+    }
+
+    public void setClosingSplit(boolean closingSplit) {
+        this.closingSplit = closingSplit;
     }
 }
