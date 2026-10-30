@@ -57,6 +57,22 @@ public class ExtractionService {
             Responda apenas com JSON neste formato:
             {"memories": [{"kind": "INTEREST|PREFERENCE|PROJECT|DECISION|FACT|HEALTH|PLAN", "subject_key": "slug-curto", "content": "frase curta em português", "confidence": 0.0, "valid_until": null}]}""";
 
+    /**
+     * Frente 2 (pré-registro 30/10): transições declaradas "de X para Y" /
+     * "agora X, não mais Y" (dia de jogo, cargo, sabor) também fecham fase —
+     * mas exigem a troca: fechamento da fase antiga E estado novo com chave
+     * própria, como dois candidatos. Sem essa regra, quando o extrator
+     * colapsa a mensagem num único candidato de fechamento a guarda da chave
+     * única descarta o estado novo (diagnóstico diag-dia-10/11: o grafo
+     * perde a fase antiga sem receber a nova). Só entra no prompt quando as
+     * duas chaves estão LIGADAS (fechamento de assunto + closing-split).
+     */
+    private static final String CLOSING_SPLIT_RULE = """
+            - Quando a mensagem traz uma transição declarada de estado ("de X para Y", "agora jogo nas quartas, não mais aos domingos", "de engenheira para gerente"), a fase antiga ENCERRA e um estado novo começa: devolva sempre os DOIS candidatos:
+              (1) candidato de FECHAMENTO da fase antiga: mesmo kind e MESMO subject_key da memória existente, com conteúdo curto afirmando que a fase terminou (ex.: para "Joga futebol às quartas-feiras.", o candidato "Não joga mais futebol.");
+              (2) estado novo: subject_key NOVO e content que não narra a transição nem cita a fase encerrada (em vez de "Mudou o jogo do domingo para a quarta", escreva "Joga futebol às quartas-feiras.").
+              Nunca devolva apenas o candidato de fechamento se a mensagem traz um estado novo.""";
+
     private static final String SYSTEM_PROMPT = """
             Você extrai memórias sobre o usuário a partir das mensagens dele.
 
@@ -97,10 +113,19 @@ public class ExtractionService {
                 + "\n\nMensagens do usuário:\n"
                 + String.join("\n", messages.stream().map("- "::concat).toList());
 
+        String systemPrompt;
+        if (!properties.isSubjectClosing()) {
+            systemPrompt = SYSTEM_PROMPT;
+        } else if (properties.isClosingSplit()) {
+            // Frente 2: a regra de transição "de X para Y" entra sempre
+            // no fim do prompt de fechamento (uma linha inteira extra).
+            systemPrompt = SYSTEM_PROMPT_WITH_CLOSING + "\n\n" + CLOSING_SPLIT_RULE;
+        } else {
+            systemPrompt = SYSTEM_PROMPT_WITH_CLOSING;
+        }
         String raw = llmClient.complete(new LlmRequest(
                 properties.getExtractionModel(),
-                properties.isSubjectClosing() ? SYSTEM_PROMPT_WITH_CLOSING : SYSTEM_PROMPT,
-                userPrompt, 0.0));
+                systemPrompt, userPrompt, 0.0));
         return parse(raw);
     }
 

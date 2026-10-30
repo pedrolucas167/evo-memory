@@ -206,6 +206,50 @@ class ExtractionServiceTest {
         assertThat(capturedSystem[0]).contains("candidato de FECHAMENTO");
         assertThat(capturedSystem[0]).contains("MESMO subject_key da memória existente");
         assertThat(capturedSystem[0]).contains("subject_key NOVO");
+        // Frente 2 desligada: sem a regra de transição declarada.
+        assertThat(capturedSystem[0]).doesNotContain("devolva sempre os DOIS candidatos");
+    }
+
+    @Test
+    void closingSplitPromptAddsTheDeclaredTransitionRule() {
+        // Frente 2 (pré-registro 30/10): transição "de X para Y" exige os dois
+        // candidatos — fechamento com a MESMA chave e estado novo com chave
+        // nova — porque o juiz não vê a mensagem crua para resgatar o estado.
+        properties.setExtractionModel("test-model");
+        properties.setSubjectClosing(true);
+        properties.setClosingSplit(true);
+        final String[] capturedSystem = new String[1];
+        LlmClient client = request -> {
+            capturedSystem[0] = request.systemPrompt();
+            return "{\"memories\": []}";
+        };
+
+        new ExtractionService(client, properties, mapper).extract(List.of("msg"), List.of());
+
+        assertThat(capturedSystem[0]).contains("transição declarada");
+        assertThat(capturedSystem[0]).contains("devolva sempre os DOIS candidatos");
+        assertThat(capturedSystem[0]).contains("MESMO subject_key da memória existente");
+        assertThat(capturedSystem[0]).contains("Nunca devolva apenas o candidato de fechamento");
+        // O corpo do fechamento 1.1 continua presente.
+        assertThat(capturedSystem[0]).contains("candidato de FECHAMENTO");
+    }
+
+    @Test
+    void closingSplitWithoutSubjectClosingKeepsHistoricalPrompt() {
+        properties.setExtractionModel("test-model");
+        properties.setSubjectClosing(false);
+        properties.setClosingSplit(true);
+        final String[] capturedSystem = new String[1];
+        LlmClient client = request -> {
+            capturedSystem[0] = request.systemPrompt();
+            return "{\"memories\": []}";
+        };
+
+        new ExtractionService(client, properties, mapper).extract(List.of("msg"), List.of());
+
+        // Sem fechamento a regra de troca não existe (a fase nem fecha).
+        assertThat(capturedSystem[0]).doesNotContain("candidato de FECHAMENTO");
+        assertThat(capturedSystem[0]).doesNotContain("devolva sempre os DOIS candidatos");
     }
 
     @Test
