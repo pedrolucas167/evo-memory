@@ -94,6 +94,18 @@ Experimentos executados:
   e instrumento 0→5/5 cada; `futebol-abc` 0→2/5 (sobram escorregões de dia,
   reservados a pré-registro próprio). Custo: +129 s/caso nesta janela;
   `obsolete_old` segue 0/30 pela 5ª rodada consecutiva.
+- **Fechamento em transição declarada (frente 2, ADOTADA)** (`MEMORY_CLOSING_SPLIT`,
+  pré-registro `prereg/2026-10-30-closing-split.md`, dossiê
+  [`registro/2026-10-30-closing-split.md`](docs/research/registro/2026-10-30-closing-split.md)):
+  a regra do extrator passa a cobrir transições declaradas "de X para Y"
+  (dia de jogo, cargo, sabor), exigindo sempre os dois candidatos —
+  fechamento com a MESMA chave da fase antiga e estado novo com chave
+  própria. Diagnóstico mostrou a perda: extrator colapsando a mensagem
+  fechava a fase e a guarda da chave única descartava o estado novo.
+  **Segunda adoção no medidor v2 pelo critério a priori**: `state_correct`
+  25/30 (controle) vs **29/30** (tratamento, +4/30; falhas 1→0) —
+  `futebol-abc` 5/5 com grafo limpo. Custo: zero chamada LLM nova;
+  `obsolete_old` segue 0/30 pela 6ª rodada consecutiva.
 - Ablação da recuperação (juiz ligado vs. legado) e os dois resultados
   negativos determinísticos: ver
   [`registro/`](docs/research/registro/) e a seção de re-ranking abaixo.

@@ -33,8 +33,10 @@ public class LlmProperties {
      * diag-dia-10/11) mostrou a perda: o extrator colapsa a mensagem num
      * único candidato de fechamento e a guarda da chave única descarta a
      * linha do estado novo (o juiz não vê a mensagem crua e não pode
-     * resgatá-la). Padrão DESLIGADO até a medição; env
-     * MEMORY_CLOSING_SPLIT=true liga o braço de tratamento.
+     * resgatá-la). Padrão LIGADO por medição (dossiê 30/10:
+     * state_correct 29/30 vs 25/30 no controle, falhas 1→0 — adotado pelos
+     * critérios a priori do pré-registro de 30/10; env
+     * MEMORY_CLOSING_SPLIT=false reverte em emergência).
      */
     private boolean closingSplit = false;
 
